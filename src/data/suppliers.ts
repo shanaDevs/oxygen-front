@@ -1,0 +1,47 @@
+import { Supplier } from '@/types';
+
+export const suppliers: Supplier[] = [
+  {
+    id: 'sup-001',
+    name: 'Lanka Oxygen Ltd',
+    phone: '+94 77 123 4567',
+    email: 'info@lankaoxygen.lk',
+    address: '45 Industrial Zone, Colombo 15',
+    totalSupplied: 25000,
+    totalPaid: 850000,
+    totalOutstanding: 150000,
+    createdAt: '2024-01-15T00:00:00Z',
+  },
+  {
+    id: 'sup-002',
+    name: 'BOC Gas Suppliers',
+    phone: '+94 71 234 5678',
+    email: 'sales@bocgas.lk',
+    address: '78 Main Road, Kandy',
+    totalSupplied: 18500,
+    totalPaid: 620000,
+    totalOutstanding: 75000,
+    createdAt: '2024-02-20T00:00:00Z',
+  },
+  {
+    id: 'sup-003',
+    name: 'Industrial Gas Company',
+    phone: '+94 76 345 6789',
+    email: 'orders@igc.lk',
+    address: '23 Factory Lane, Gampaha',
+    totalSupplied: 12000,
+    totalPaid: 400000,
+    totalOutstanding: 0,
+    createdAt: '2024-04-10T00:00:00Z',
+  },
+  {
+    id: 'sup-004',
+    name: 'MediGas Solutions',
+    phone: '+94 78 456 7890',
+    address: '56 Hospital Road, Negombo',
+    totalSupplied: 8500,
+    totalPaid: 280000,
+    totalOutstanding: 45000,
+    createdAt: '2024-06-05T00:00:00Z',
+  },
+];

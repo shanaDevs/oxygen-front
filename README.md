@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Oxygen POS - Frontend
+
+A modern Point of Sale (POS) system frontend built with Next.js 15, TypeScript, and Tailwind CSS.
+
+## Features
+
+- **Dashboard** - Overview of sales, orders, and top products
+- **Products** - Manage product inventory with search and filtering
+- **Sales** - View and manage all sales transactions
+- **POS Terminal** - Full-featured point of sale interface with cart
+- **Settings** - Configure store settings and API connection
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: React Hooks
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ installed
+- npm or yarn package manager
+
+### Installation
+
+1. Navigate to the project directory:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd oxygen-front
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Start the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+ app/                    # Next.js App Router pages
+    page.tsx           # Dashboard (home page)
+    products/          # Products management
+    sales/             # Sales history
+    pos/               # POS terminal
+    settings/          # Settings page
+ components/            # Reusable React components
+    dashboard/         # Dashboard-specific components
+    products/          # Product-related components
+    sales/             # Sales-related components
+    layout/            # Layout components (Sidebar, Header)
+    ui/                # Generic UI components
+ data/                  # Dummy data for development
+    products.ts
+    categories.ts
+    sales.ts
+    users.ts
+    customers.ts
+ services/              # API service layer
+    config.ts          # API configuration
+    productService.ts
+    categoryService.ts
+    saleService.ts
+    dashboardService.ts
+ types/                 # TypeScript type definitions
+     index.ts
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Using Dummy Data vs Real Backend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The project is configured to use **dummy data by default** for development. 
 
-## Deploy on Vercel
+### To switch to Express.js backend:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Open `src/services/config.ts`
+2. Change `USE_MOCK_DATA: true` to `USE_MOCK_DATA: false`
+3. Update `.env.local` with your backend URL:
+   ```
+   NEXT_PUBLIC_API_URL=http://localhost:5000/api
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Expected Backend API Endpoints
+
+When connecting to your Express.js backend, implement these endpoints:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/products` | GET | Get all products |
+| `/api/products/:id` | GET | Get product by ID |
+| `/api/products` | POST | Create product |
+| `/api/products/:id` | PUT | Update product |
+| `/api/products/:id` | DELETE | Delete product |
+| `/api/categories` | GET | Get all categories |
+| `/api/sales` | GET | Get all sales |
+| `/api/sales` | POST | Create sale |
+| `/api/sales/:id/cancel` | POST | Cancel sale |
+| `/api/dashboard` | GET | Get dashboard stats |
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## License
+
+MIT
