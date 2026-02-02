@@ -135,7 +135,7 @@ export function FillBottlesModal({
             </Button>
           </div>
 
-          <ScrollArea className="h-72 rounded-xl border-2 bg-slate-50 p-3 shadow-inner">
+          <ScrollArea className="h-72 rounded-xl border-2 bg-slate-50 dark:bg-slate-900/50 p-3 shadow-inner">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3">
               {filteredBottles.map((bottle) => {
                 const type = bottleTypes.find((t) => t.id === bottle.bottleTypeId)
@@ -145,7 +145,7 @@ export function FillBottlesModal({
                     key={bottle.id}
                     className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${selectedBottles.includes(bottle.id)
                       ? 'bg-primary/5 border-primary shadow-md scale-[1.02]'
-                      : 'bg-white border-slate-200 hover:border-primary/50'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary/50'
                       }`}
                   >
                     <input
@@ -156,7 +156,7 @@ export function FillBottlesModal({
                     />
                     <div className={`flex items-center justify-center w-6 h-6 rounded-lg border-2 transition-colors ${selectedBottles.includes(bottle.id)
                       ? 'bg-primary border-primary text-white shadow-sm'
-                      : 'border-slate-300 bg-white'
+                      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
                       }`}>
                       {selectedBottles.includes(bottle.id) && <Check className="h-4 w-4" />}
                     </div>
@@ -171,7 +171,9 @@ export function FillBottlesModal({
             </div>
           </ScrollArea>
 
-          <div className={`p-5 rounded-2xl border-2 shadow-sm ${canFill ? 'bg-emerald-50 border-emerald-200 shadow-emerald-100/50' : 'bg-rose-50 border-rose-200 shadow-rose-100/50'}`}>
+          <div className={`p-5 rounded-2xl border-2 shadow-sm ${canFill
+            ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 shadow-emerald-100/50 dark:shadow-none'
+            : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900 shadow-rose-100/50 dark:shadow-none'}`}>
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <span className={cn('text-xs font-black uppercase tracking-widest', canFill ? 'text-emerald-600' : 'text-rose-600')}>
@@ -200,7 +202,7 @@ export function FillBottlesModal({
           </div>
 
           <div className="flex gap-4 mt-8">
-            <Button type="button" variant="ghost" onClick={onClose} className="flex-1 h-12 font-bold hover:bg-slate-100">
+            <Button type="button" variant="ghost" onClick={onClose} className="flex-1 h-12 font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
               Cancel
             </Button>
             <Button type="submit" disabled={!canFill || selectedBottles.length === 0} className="flex-1 h-12 gap-2 text-lg font-black shadow-xl">

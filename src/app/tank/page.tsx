@@ -256,9 +256,9 @@ export default function TankPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 gap-4 md:gap-6">
         <StatCard
-          title="Tank Level"
+          title="Tank Saturation"
           value={`${tankPercentage.toFixed(1)}%`}
           icon={Droplets}
           color="cyan"
@@ -268,22 +268,10 @@ export default function TankPage() {
           } : undefined}
         />
         <StatCard
-          title="Filled Bottles"
-          value={filledBottles.length}
-          icon={CircleCheck}
-          color="green"
-        />
-        <StatCard
-          title="Empty Bottles"
-          value={emptyBottles.length}
+          title="Empty Bottles (Pending Refill)"
+          value={emptyBottles.filter(b => b.location === 'center').length}
           icon={CircleDot}
           color="orange"
-        />
-        <StatCard
-          title="With Customers"
-          value={bottlesWithCustomers.length}
-          icon={Package}
-          color="purple"
         />
       </div>
 
@@ -420,8 +408,8 @@ export default function TankPage() {
       </Card>
 
       <div>
-        <h3 className="text-lg font-semibold mb-4">Current Bottles</h3>
-        <BottleGrid bottles={bottles} />
+        <h3 className="text-lg font-semibold mb-4">Empty Bottles (Ready for Refill)</h3>
+        <BottleGrid bottles={bottles.filter(b => b.status === 'empty' && b.location === 'center')} />
       </div>
 
       <Dialog open={isFillingInProgress} onOpenChange={() => { }}>
@@ -483,7 +471,7 @@ export default function TankPage() {
         isOpen={showFillBottlesModal}
         onClose={() => setShowFillBottlesModal(false)}
         onFill={handleFillBottles}
-        emptyBottles={emptyBottles}
+        emptyBottles={emptyBottles.filter(b => b.location === 'center')}
         bottleTypes={bottleTypes}
         tankLevel={currentKg}
       />
