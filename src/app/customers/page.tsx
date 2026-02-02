@@ -669,9 +669,9 @@ export default function CustomersPage() {
                           <td className="px-3 py-2 text-center">
                             <Badge
                               variant={
-                                bottle.status === 'filled' ? 'default' :
-                                  bottle.status === 'with_customer' ? 'secondary' :
-                                    bottle.status === 'damaged' ? 'destructive' :
+                                (bottle.status as string) === 'filled' ? 'default' :
+                                  (bottle.status as string) === 'with_customer' ? 'secondary' :
+                                    (bottle.status as string) === 'damaged' ? 'destructive' :
                                       'outline'
                               }
                               className="text-xs"

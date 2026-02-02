@@ -96,7 +96,7 @@ export default function BottleTypesPage() {
         setFormData({
             name: type.name,
             capacityLiters: type.capacityLiters.toString(),
-            refillKg: type.refillKg.toString(),
+            refillKg: (type.refillKg || 0).toString(),
             pricePerFill: type.pricePerFill.toString(),
             depositAmount: (type.depositAmount || 0).toString(),
             description: type.description || '',

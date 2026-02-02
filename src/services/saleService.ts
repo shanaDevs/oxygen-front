@@ -11,7 +11,7 @@ export const saleService = {
       await delay(300);
       return mockSales;
     }
-    
+
     const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.SALES));
     const data: ApiResponse<Sale[]> = await response.json();
     return data.data;
@@ -34,7 +34,7 @@ export const saleService = {
         totalPages: Math.ceil(mockSales.length / limit),
       };
     }
-    
+
     const response = await fetch(
       getApiUrl(`${API_CONFIG.ENDPOINTS.SALES}?page=${page}&limit=${limit}`)
     );
@@ -47,7 +47,7 @@ export const saleService = {
       await delay(200);
       return mockSales.find(s => s.id === id) || null;
     }
-    
+
     const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.SALES}/${id}`));
     const data: ApiResponse<Sale> = await response.json();
     return data.data;
@@ -60,7 +60,7 @@ export const saleService = {
       const today = new Date().toISOString().split('T')[0];
       return mockSales.filter(s => s.createdAt.startsWith(today));
     }
-    
+
     const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.SALES}/today`));
     const data: ApiResponse<Sale[]> = await response.json();
     return data.data;
@@ -77,7 +77,7 @@ export const saleService = {
         return saleDate >= start && saleDate <= end;
       });
     }
-    
+
     const response = await fetch(
       getApiUrl(`${API_CONFIG.ENDPOINTS.SALES}?startDate=${startDate}&endDate=${endDate}`)
     );
@@ -89,7 +89,10 @@ export const saleService = {
   async create(items: SaleItem[], paymentMethod: Sale['paymentMethod'], discount: number = 0): Promise<Sale> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await delay(500);
-      const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+      const subtotal = items.reduce((sum, item) => {
+        const itemTotal = item.total || (item.price || 0) * (item.quantity || 1);
+        return sum + itemTotal;
+      }, 0);
       const tax = subtotal * 0.1; // 10% tax
       const newSale: Sale = {
         id: `sale-${Date.now()}`,
@@ -105,7 +108,7 @@ export const saleService = {
       };
       return newSale;
     }
-    
+
     const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.SALES), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -123,7 +126,7 @@ export const saleService = {
       if (!sale) throw new Error('Sale not found');
       return { ...sale, status: 'cancelled' };
     }
-    
+
     const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.SALES}/${id}/cancel`), {
       method: 'POST',
     });
@@ -149,7 +152,7 @@ export const saleService = {
         monthTotal: todayTotal * 22, // Simulated
       };
     }
-    
+
     const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.SALES}/stats`));
     return response.json();
   },

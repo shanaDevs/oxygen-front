@@ -9,9 +9,12 @@ export interface CreateSaleInput {
         serialNumber?: string;
         bottleTypeId?: string;
         bottleTypeName?: string;
-        capacityLiters: number;
+        capacityLiters?: number;
         refillKg?: number;
-        price: number;
+        price?: number;
+        quantity?: number;
+        unitPrice?: number;
+        total?: number;
     }>;
     taxPercentage?: number;
     discountPercentage?: number;
@@ -133,14 +136,14 @@ export const salesService = {
                 invoiceNumber: `INV-${new Date().toISOString().substring(0, 10).replace(/-/g, '')}-0001`,
                 customerId: data.customerId,
                 customerName: 'Test Customer',
-                items: data.items || [],
+                items: (data.items || []).map(item => ({ ...item, quantity: item.quantity || 1 })),
                 bottleCount: data.items?.length || data.bottleIds?.length || 0,
-                subtotal: data.items?.reduce((sum, i) => sum + i.price, 0) || 0,
+                subtotal: data.items?.reduce((sum, i) => sum + (i.price || 0), 0) || 0,
                 tax: 0,
                 taxPercentage: data.taxPercentage || 0,
                 discount: data.discount || 0,
                 discountPercentage: data.discountPercentage || 0,
-                total: data.items?.reduce((sum, i) => sum + i.price, 0) || 0,
+                total: data.items?.reduce((sum, i) => sum + (i.price || 0), 0) || 0,
                 paymentMethod: data.paymentMethod || 'cash',
                 amountPaid: data.amountPaid || 0,
                 creditAmount: 0,
