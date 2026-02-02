@@ -278,8 +278,8 @@ export function SaleDetailModal({
                             variant="outline"
                             className="flex-1"
                             onClick={() => {
-                                const url = pdfService.getSaleReceiptUrl(sale.id);
-                                onPreview?.(url, `Receipt - ${sale.id.split('-').pop()}`);
+                                const url = pdfService.getInvoiceUrl(sale.id);
+                                onPreview?.(url, `Receipt - ${sale.invoiceNumber || sale.id.split('-').pop()}`);
                             }}
                         >
                             <Eye className="h-4 w-4 mr-2" />
@@ -288,7 +288,7 @@ export function SaleDetailModal({
                         <Button
                             variant="outline"
                             className="flex-1"
-                            onClick={() => pdfService.downloadSaleReceipt(sale.id)}
+                            onClick={() => pdfService.downloadInvoice(sale.id, sale.invoiceNumber || sale.id)}
                         >
                             <Download className="h-4 w-4 mr-2" />
                             Download
@@ -296,6 +296,6 @@ export function SaleDetailModal({
                     </div>
                 </div>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

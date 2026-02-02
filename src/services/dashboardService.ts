@@ -9,7 +9,7 @@ export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await delay(400);
-      
+
       const completedSales = mockSales.filter(s => s.status === 'completed');
       const todaySales = completedSales.reduce((sum, s) => sum + s.total, 0);
       const totalOrders = completedSales.length;
@@ -19,7 +19,8 @@ export const dashboardService = {
       const productQuantities: Record<string, number> = {};
       completedSales.forEach(sale => {
         sale.items.forEach(item => {
-          productQuantities[item.productId] = (productQuantities[item.productId] || 0) + item.quantity;
+          const productId = item.productId || item.bottleId || 'unknown';
+          productQuantities[productId] = (productQuantities[productId] || 0) + (item.quantity || 1);
         });
       });
 
@@ -44,7 +45,7 @@ export const dashboardService = {
         recentSales,
       };
     }
-    
+
     const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.DASHBOARD));
     return response.json();
   },
@@ -56,7 +57,7 @@ export const dashboardService = {
   }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await delay(300);
-      
+
       // Generate mock chart data
       if (period === 'day') {
         return {
@@ -75,7 +76,7 @@ export const dashboardService = {
         };
       }
     }
-    
+
     const response = await fetch(
       getApiUrl(`${API_CONFIG.ENDPOINTS.DASHBOARD}/chart?period=${period}`)
     );
@@ -99,7 +100,7 @@ export const dashboardService = {
         { category: 'Others', sales: 700, percentage: 8 },
       ];
     }
-    
+
     const response = await fetch(
       getApiUrl(`${API_CONFIG.ENDPOINTS.DASHBOARD}/categories`)
     );

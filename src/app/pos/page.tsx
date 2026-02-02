@@ -80,7 +80,7 @@ export default function POSPage() {
   const [amountPaid, setAmountPaid] = useState<number>(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [lastSale, setLastSale] = useState<{ saleId: string; invoiceNumber: string; total: number; bottleCount: number; returnCount: number } | null>(null);
+  const [lastSale, setLastSale] = useState<{ saleId: string; invoiceNumber?: string; total: number; bottleCount: number; returnCount: number } | null>(null);
 
   // Quick add count state
   const [quickAddCount, setQuickAddCount] = useState<Record<string, number>>({});

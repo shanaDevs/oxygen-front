@@ -26,35 +26,46 @@ export interface SaleItem {
   serialNumber?: string;
   bottleTypeId?: string;
   bottleTypeName?: string;
-  capacityLiters: number;
+  capacityLiters?: number;
   refillKg?: number;
-  price: number;
+  price?: number;
+  unitPrice?: number;
+  total?: number;
+  productId?: string;
+  productName?: string;
+  name?: string;
+  sku?: string;
+  quantity?: number;
+  discount?: number;
+  tax?: number;
 }
 
 export interface Sale {
   id: string;
-  invoiceNumber: string;
+  invoiceNumber?: string;
   customerId?: string;
   customerName?: string;
   customerPhone?: string;
   items: SaleItem[];
-  bottleCount: number;
+  bottleCount?: number;
   subtotal: number;
   tax: number;
-  taxPercentage: number;
+  taxPercentage?: number;
   discount: number;
-  discountPercentage: number;
+  discountPercentage?: number;
   total: number;
   paymentMethod: 'cash' | 'credit' | 'partial' | 'bank_transfer' | 'card' | 'mobile';
-  amountPaid: number;
-  creditAmount: number;
-  changeAmount: number;
+  amountPaid?: number;
+  creditAmount?: number;
+  changeAmount?: number;
+  change?: number;
+  reference?: string;
   status: 'pending' | 'completed' | 'cancelled' | 'refunded';
-  paymentStatus: 'pending' | 'partial' | 'full';
+  paymentStatus?: 'pending' | 'partial' | 'full';
   userId?: string;
   userName?: string;
   notes?: string;
-  saleDate: string;
+  saleDate?: string;
   createdAt: string;
   customer?: Customer;
   payments?: SalePayment[];
@@ -175,7 +186,7 @@ export interface OxygenBottle {
   serialNumber: string;
   capacityLiters: number;
   bottleTypeId?: string;
-  status: 'empty' | 'filled' | 'with_customer' | 'maintenance' | 'retired';
+  status: 'empty' | 'filled' | 'with_customer' | 'maintenance' | 'retired' | 'damaged';
   location: 'center' | 'customer';
   customerId?: string;
   customerName?: string;
@@ -196,7 +207,7 @@ export interface BottleType {
   id: string;
   name: string;
   capacityLiters: number;
-  refillKg: number; // KG required to fill this bottle type
+  refillKg?: number; // KG required to fill this bottle type
   pricePerFill: number;
   depositAmount: number;
   description?: string;
