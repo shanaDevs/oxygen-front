@@ -3,10 +3,17 @@ import { MainTank } from '@/types';
 export const mainTank: MainTank = {
   id: 'tank-001',
   name: 'Main Storage Tank',
+  capacityTons: 10,
+  capacityKg: 10000,
+  currentLevelKg: 6500,
+  percentFull: 65,
   capacityLiters: 10000,
   currentLevelLiters: 6500,
   lastRefillDate: '2026-01-18T10:30:00Z',
+  lastRefillAmountKg: 2500,
   lastRefillAmount: 2500,
+  lowLevelAlertKg: 2000,
+  criticalLevelAlertKg: 1000,
 };
 
 // Tank level history for charts

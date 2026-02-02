@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -14,11 +13,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationBell } from './NotificationBell';
 import {
   Search,
-  Bell,
   HelpCircle,
   Calendar,
+  User,
+  Settings,
+  LogOut,
 } from 'lucide-react';
 
 export function Header() {
@@ -67,54 +69,49 @@ export function Header() {
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-              <Bell className="h-4 w-4" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-destructive text-destructive-foreground">
-                3
-              </Badge>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel className="flex items-center justify-between">
-              Notifications
-              <Badge variant="secondary" className="text-xs">3 new</Badge>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-destructive" />
-                <span className="font-medium text-sm">Low Tank Level</span>
-              </div>
-              <span className="text-xs text-muted-foreground pl-4">Tank level below 30% - consider refilling</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="font-medium text-sm">Outstanding Credit</span>
-              </div>
-              <span className="text-xs text-muted-foreground pl-4">City Hospital has Rs. 45,000 outstanding</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="font-medium text-sm">New Order</span>
-              </div>
-              <span className="text-xs text-muted-foreground pl-4">ABC Factory requested 10 bottles</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-center text-primary text-sm cursor-pointer">
-              View all notifications
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Notifications - Now using the new component */}
+        <NotificationBell />
 
         {/* Help - hidden on mobile */}
         <Button variant="ghost" size="icon" className="h-9 w-9 hidden md:flex">
           <HelpCircle className="h-4 w-4" />
         </Button>
+
+        {/* User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src="" alt="User" />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  AD
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>
+              <div className="flex flex-col">
+                <span className="font-medium">Admin User</span>
+                <span className="text-xs text-muted-foreground">admin@oxygenpos.com</span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="gap-2 cursor-pointer">
+              <User className="h-4 w-4" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-2 cursor-pointer">
+              <Settings className="h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="gap-2 cursor-pointer text-destructive">
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

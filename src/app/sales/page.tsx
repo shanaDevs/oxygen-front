@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SalesTable } from "@/components/sales";
+import { SalesTable, SaleDetailModal } from "@/components/sales";
 import { LoadingSpinner, Card, CardContent, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from "@/components/ui";
 import { StatCard } from "@/components/dashboard";
-import { saleService } from "@/services";
+import { PDFPreviewModal } from "@/components/shared/PDFPreviewModal";
+import { saleService, pdfService } from "@/services";
 import { Sale } from "@/types";
 import { Receipt, CheckCircle2, Clock, DollarSign } from "lucide-react";
 
@@ -13,6 +14,21 @@ export default function SalesPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
+
+  // Sale Detail Modal State
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+
+  // PDF Preview State
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
+
+  const openPreview = (url: string, title: string) => {
+    setPreviewUrl(url);
+    setPreviewTitle(title);
+    setIsPreviewOpen(true);
+  };
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -40,7 +56,8 @@ export default function SalesPage() {
     .reduce((sum, s) => sum + s.total, 0);
 
   const handleView = (sale: Sale) => {
-    console.log("View sale:", sale);
+    setSelectedSale(sale);
+    setIsDetailOpen(true);
   };
 
   const handleCancel = (sale: Sale) => {
@@ -67,7 +84,7 @@ export default function SalesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Sales"
           value={sales.length}
@@ -88,7 +105,7 @@ export default function SalesPage() {
         />
         <StatCard
           title="Total Revenue"
-          value={`$${totalRevenue.toFixed(2)}`}
+          value={`Rs. ${totalRevenue.toLocaleString()}`}
           icon={DollarSign}
           color="purple"
         />
@@ -131,7 +148,23 @@ export default function SalesPage() {
         Showing {filteredSales.length} of {sales.length} sales
       </div>
 
-      <SalesTable sales={filteredSales} onView={handleView} onCancel={handleCancel} />
+      <SalesTable sales={filteredSales} onView={handleView} onCancel={handleCancel} onPreview={openPreview} />
+
+      {/* PDF Preview Modal */}
+      <PDFPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        url={previewUrl}
+        title={previewTitle}
+      />
+
+      {/* Sale Detail Modal */}
+      <SaleDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        sale={selectedSale}
+        onPreview={openPreview}
+      />
     </div>
   );
 }

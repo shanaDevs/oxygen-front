@@ -73,11 +73,11 @@ export const customerService = {
   async getTransactions(customerId?: string): Promise<CustomerTransaction[]> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await delay(300);
-      return customerId 
+      return customerId
         ? mockTransactions.filter(t => t.customerId === customerId)
         : mockTransactions;
     }
-    const endpoint = customerId 
+    const endpoint = customerId
       ? `${API_CONFIG.ENDPOINTS.CUSTOMER_TRANSACTIONS}?customerId=${customerId}`
       : API_CONFIG.ENDPOINTS.CUSTOMER_TRANSACTIONS;
     const response = await apiFetch<ApiResponse<CustomerTransaction[]>>(endpoint);
@@ -147,32 +147,58 @@ export const customerService = {
     return response.data;
   },
 
+  // Get customers with outstanding credit
+  async getCustomersWithCredit(): Promise<{
+    customers: Customer[];
+    totalOutstanding: number;
+    count: number;
+  }> {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      await delay(300);
+      const withCredit = mockCustomers.filter(c => c.totalCredit > 0);
+      return {
+        customers: withCredit,
+        totalOutstanding: withCredit.reduce((sum, c) => sum + c.totalCredit, 0),
+        count: withCredit.length,
+      };
+    }
+    const response = await apiFetch<ApiResponse<{
+      customers: Customer[];
+      totalOutstanding: number;
+      count: number;
+    }>>(`${API_CONFIG.ENDPOINTS.CUSTOMERS}/outstanding/list`);
+    return response.data;
+  },
+
   // Collect payment from customer
   async collectPayment(data: {
     customerId: string;
     amount: number;
+    paymentMethod?: 'cash' | 'bank_transfer';
     notes?: string;
-  }): Promise<CustomerTransaction> {
+  }): Promise<{
+    amountCollected: number;
+    previousCredit: number;
+    newCredit: number;
+    customer: Customer;
+  }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await delay(500);
+      const customer = mockCustomers.find(c => c.id === data.customerId);
       return {
-        id: `ct-${Date.now()}`,
-        customerId: data.customerId,
-        customerName: 'Mock Customer',
-        transactionType: 'refill',
-        bottleIds: [],
-        bottleCount: 0,
-        bottleType: 'Payment',
-        totalAmount: data.amount,
-        amountPaid: data.amount,
-        creditAmount: -data.amount,
-        paymentStatus: 'full',
-        notes: data.notes,
-        createdAt: new Date().toISOString(),
+        amountCollected: data.amount,
+        previousCredit: customer?.totalCredit || 0,
+        newCredit: Math.max(0, (customer?.totalCredit || 0) - data.amount),
+        customer: customer || mockCustomers[0],
       };
     }
-    const response = await apiFetch<ApiResponse<CustomerTransaction>>(
-      `${API_CONFIG.ENDPOINTS.CUSTOMER_TRANSACTIONS}/payment`,
+    const response = await apiFetch<ApiResponse<{
+      amountCollected: number;
+      previousCredit: number;
+      newCredit: number;
+      customer: Customer;
+    }>>(
+      `${API_CONFIG.ENDPOINTS.CUSTOMERS}/${data.customerId}/collect-payment`,
       { method: 'POST', body: JSON.stringify(data) }
     );
     return response.data;

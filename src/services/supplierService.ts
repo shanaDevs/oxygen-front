@@ -1,4 +1,4 @@
-import { Supplier, SupplierTransaction, ApiResponse } from '@/types';
+import { Supplier, SupplierTransaction, SupplierPayment, ApiResponse } from '@/types';
 import { suppliers as mockSuppliers, supplierTransactions as mockTransactions } from '@/data';
 import { API_CONFIG, apiFetch } from './config';
 
@@ -73,11 +73,11 @@ export const supplierService = {
   async getTransactions(supplierId?: string): Promise<SupplierTransaction[]> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await delay(300);
-      return supplierId 
+      return supplierId
         ? mockTransactions.filter(t => t.supplierId === supplierId)
         : mockTransactions;
     }
-    const endpoint = supplierId 
+    const endpoint = supplierId
       ? `${API_CONFIG.ENDPOINTS.SUPPLIER_TRANSACTIONS}?supplierId=${supplierId}`
       : API_CONFIG.ENDPOINTS.SUPPLIER_TRANSACTIONS;
     const response = await apiFetch<ApiResponse<SupplierTransaction[]>>(endpoint);
@@ -87,8 +87,8 @@ export const supplierService = {
   // Add supplier delivery (refill tank)
   async addDelivery(data: {
     supplierId: string;
-    litersSupplied: number;
-    pricePerLiter: number;
+    kgSupplied: number;
+    pricePerKg: number;
     amountPaid: number;
     paymentStatus: 'full' | 'partial' | 'outstanding';
     notes?: string;
@@ -100,12 +100,12 @@ export const supplierService = {
         id: `st-${Date.now()}`,
         supplierId: data.supplierId,
         supplierName: supplier?.name || 'Unknown Supplier',
-        litersSupplied: data.litersSupplied,
-        pricePerLiter: data.pricePerLiter,
-        totalAmount: data.litersSupplied * data.pricePerLiter,
+        kgSupplied: data.kgSupplied,
+        pricePerKg: data.pricePerKg,
+        totalAmount: data.kgSupplied * data.pricePerKg,
         amountPaid: data.amountPaid,
-        outstanding: (data.litersSupplied * data.pricePerLiter) - data.amountPaid,
-        paymentStatus: data.paymentStatus,
+        outstanding: (data.kgSupplied * data.pricePerKg) - data.amountPaid,
+        paymentStatus: data.paymentStatus as any,
         notes: data.notes,
         createdAt: new Date().toISOString(),
       };
@@ -114,6 +114,37 @@ export const supplierService = {
       API_CONFIG.ENDPOINTS.SUPPLIER_TRANSACTIONS,
       { method: 'POST', body: JSON.stringify(data) }
     );
+    return response.data;
+  },
+
+  // Record payment to supplier for outstanding balance
+  async payOutstanding(data: {
+    supplierId: string;
+    amount: number;
+    transactionId?: string;
+    notes?: string;
+  }): Promise<{ success: boolean; message: string }> {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      await delay(400);
+      return { success: true, message: `Payment of Rs. ${data.amount} recorded.` };
+    }
+    const response = await apiFetch<ApiResponse<any>>(
+      `${API_CONFIG.ENDPOINTS.SUPPLIER_TRANSACTIONS}/payment`,
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+    return { success: response.success, message: response.message || 'Payment successful' };
+  },
+
+  // Get payment ledger (part-by-part history)
+  async getPayments(supplierId?: string): Promise<SupplierPayment[]> {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      await delay(300);
+      return []; // Return empty for mock if not explicitly provided
+    }
+    const endpoint = supplierId
+      ? `${API_CONFIG.ENDPOINTS.SUPPLIER_TRANSACTIONS}/payments?supplierId=${supplierId}`
+      : `${API_CONFIG.ENDPOINTS.SUPPLIER_TRANSACTIONS}/payments`;
+    const response = await apiFetch<ApiResponse<SupplierPayment[]>>(endpoint);
     return response.data;
   },
 };

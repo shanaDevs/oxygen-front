@@ -31,8 +31,8 @@ export const tankService = {
   // Refill tank from supplier
   async refill(data: {
     supplierId: string;
-    litersSupplied: number;
-    pricePerLiter: number;
+    kgSupplied: number;
+    pricePerKg: number;
     amountPaid: number;
     paymentStatus: 'full' | 'partial' | 'outstanding';
     notes?: string;
@@ -40,33 +40,36 @@ export const tankService = {
     if (API_CONFIG.USE_MOCK_DATA) {
       await delay(500);
       const supplier = mockSuppliers.find(s => s.id === data.supplierId);
-      const newLevel = mockTank.currentLevelLiters + data.litersSupplied;
-      
+      const newLevel = mockTank.currentLevelKg + data.kgSupplied;
+
       return {
         tank: {
           ...mockTank,
-          currentLevelLiters: newLevel,
+          currentLevelKg: newLevel,
           lastRefillDate: new Date().toISOString(),
-          lastRefillAmount: data.litersSupplied,
+          lastRefillAmountKg: data.kgSupplied,
         },
         transaction: {
           id: `st-${Date.now()}`,
           supplierId: data.supplierId,
           supplierName: supplier?.name || 'Unknown Supplier',
-          litersSupplied: data.litersSupplied,
-          pricePerLiter: data.pricePerLiter,
-          totalAmount: data.litersSupplied * data.pricePerLiter,
+          kgSupplied: data.kgSupplied,
+          pricePerKg: data.pricePerKg,
+          totalAmount: data.kgSupplied * data.pricePerKg,
           amountPaid: data.amountPaid,
-          outstanding: (data.litersSupplied * data.pricePerLiter) - data.amountPaid,
+          outstanding: (data.kgSupplied * data.pricePerKg) - data.amountPaid,
           paymentStatus: data.paymentStatus,
           notes: data.notes,
           createdAt: new Date().toISOString(),
-        },
+        } as any,
       };
     }
     const response = await apiFetch<ApiResponse<{ tank: MainTank; transaction: SupplierTransaction }>>(
       `${API_CONFIG.ENDPOINTS.TANK}/refill`,
-      { method: 'POST', body: JSON.stringify(data) }
+      {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }
     );
     return response.data;
   },
@@ -81,12 +84,13 @@ export const tankService = {
           id: 'tfh-1',
           supplierId: mockSuppliers[0]?.id || 's-1',
           supplierName: mockSuppliers[0]?.name || 'Sri Lanka Oxygen Ltd',
+          kgAdded: mockTank.lastRefillAmountKg || 2500,
           litersAdded: mockTank.lastRefillAmount,
-          previousLevel: mockTank.currentLevelLiters - mockTank.lastRefillAmount,
-          newLevel: mockTank.currentLevelLiters,
-          pricePerLiter: 5,
-          totalAmount: mockTank.lastRefillAmount * 5,
-          amountPaid: mockTank.lastRefillAmount * 5,
+          previousLevel: (mockTank.currentLevelKg || 6500) - (mockTank.lastRefillAmountKg || 2500),
+          newLevel: mockTank.currentLevelKg || 6500,
+          pricePerKg: 40,
+          totalAmount: (mockTank.lastRefillAmountKg || 2500) * 40,
+          amountPaid: (mockTank.lastRefillAmountKg || 2500) * 40,
           outstanding: 0,
           paymentStatus: 'full',
           createdAt: mockTank.lastRefillDate,
@@ -94,8 +98,8 @@ export const tankService = {
       ];
       return limit ? mockHistory.slice(0, limit) : mockHistory;
     }
-    const url = limit 
-      ? `${API_CONFIG.ENDPOINTS.TANK_FILL_HISTORY}?limit=${limit}` 
+    const url = limit
+      ? `${API_CONFIG.ENDPOINTS.TANK_FILL_HISTORY}?limit=${limit}`
       : API_CONFIG.ENDPOINTS.TANK_FILL_HISTORY;
     const response = await apiFetch<ApiResponse<TankFillHistory[]>>(url);
     return response.data;

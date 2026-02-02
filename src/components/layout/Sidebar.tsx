@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import {
   LayoutDashboard,
   Droplets,
@@ -22,15 +22,18 @@ import {
   LogOut,
   Menu,
   X,
+  Bell,
 } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/notifications', label: 'Notifications', icon: Bell },
   { href: '/tank', label: 'Tank Management', icon: Droplets },
   { href: '/suppliers', label: 'Suppliers', icon: Factory },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/bottles', label: 'Bottles', icon: Container },
   { href: '/pos', label: 'Quick Sale', icon: ShoppingCart },
+  { href: '/bottle-types', label: 'Bottle Types', icon: Container },
   { href: '/sales', label: 'Sales History', icon: History },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -128,6 +131,10 @@ export function Sidebar() {
       {/* Mobile Sidebar - Sheet */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="p-0 w-72">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation Menu</SheetTitle>
+            <SheetDescription>Access all pages of the Oxygen POS system</SheetDescription>
+          </SheetHeader>
           <div className="h-full flex flex-col">
             <SidebarContent onNavigate={() => setOpen(false)} />
           </div>

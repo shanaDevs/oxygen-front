@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   description: "Complete oxygen refilling center management system with tank monitoring, bottle tracking, supplier and customer management",
 };
 
+import { Toaster } from 'sonner';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,6 +31,7 @@ export default function RootLayout({
             <Header />
             <main className="flex-1 p-4 md:p-6">{children}</main>
           </div>
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
     </html>

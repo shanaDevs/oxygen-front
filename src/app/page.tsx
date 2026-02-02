@@ -29,7 +29,7 @@ import {
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // State for API data
   const [mainTank, setMainTank] = useState<MainTank | null>(null);
   const [oxygenBottles, setOxygenBottles] = useState<OxygenBottle[]>([]);
@@ -43,9 +43,9 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Fetch all data in parallel
-        const [tank, bottles, custs, supps, custTx, suppTx] = await Promise.all([
+        const [tank, bottlesRes, custs, supps, custTx, suppTx] = await Promise.all([
           tankService.getStatus(),
           bottleService.getAll(),
           customerService.getAll(),
@@ -53,13 +53,14 @@ export default function DashboardPage() {
           customerService.getTransactions(),
           supplierService.getTransactions(),
         ]);
-        
+
         setMainTank(tank);
-        setOxygenBottles(bottles);
-        setCustomers(custs);
-        setSuppliers(supps);
-        setCustomerTransactions(custTx);
-        setSupplierTransactions(suppTx);
+        // Handle both array and ApiResponse formats
+        setOxygenBottles(Array.isArray(bottlesRes) ? bottlesRes : bottlesRes.data || []);
+        setCustomers(Array.isArray(custs) ? custs : custs || []);
+        setSuppliers(Array.isArray(supps) ? supps : supps || []);
+        setCustomerTransactions(Array.isArray(custTx) ? custTx : custTx || []);
+        setSupplierTransactions(Array.isArray(suppTx) ? suppTx : suppTx || []);
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -67,7 +68,7 @@ export default function DashboardPage() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -95,7 +96,7 @@ export default function DashboardPage() {
   }
 
   // Calculate stats
-  const tankPercentage = (mainTank.currentLevelLiters / mainTank.capacityLiters) * 100;
+  const tankPercentage = typeof mainTank.percentFull === 'string' ? parseFloat(mainTank.percentFull) : mainTank.percentFull;
   const filledBottles = oxygenBottles.filter(b => b.status === 'filled').length;
   const emptyBottles = oxygenBottles.filter(b => b.status === 'empty').length;
   const bottlesWithCustomers = oxygenBottles.filter(b => b.status === 'with_customer').length;
@@ -124,9 +125,19 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Link href="/tank" className="block">
+      {/* Tank Visualization - Primary View */}
+      <div className="grid grid-cols-1 gap-6">
+        <TankVisualization
+          capacity={mainTank.capacityKg}
+          currentLevel={mainTank.currentLevelKg}
+          label="Main Storage Tank Status"
+          unit="kg"
+        />
+      </div>
+
+      {/* Main Stats - 2x2 grid on mobile, 4 per row on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 overflow-hidden">
+        <Link href="/tank" className="block h-full">
           <StatCard
             title="Tank Level"
             value={`${tankPercentage.toFixed(1)}%`}
@@ -135,31 +146,28 @@ export default function DashboardPage() {
             trend={{ value: 15, isPositive: true }}
           />
         </Link>
-        <Link href="/bottles" className="block">
+        <Link href="/bottles" className="block h-full">
           <StatCard
-            title="Filled Bottles"
+            title="Filled"
             value={filledBottles}
             icon={CircleCheck}
             color="green"
-            description="Ready for distribution"
           />
         </Link>
-        <Link href="/bottles" className="block">
+        <Link href="/bottles" className="block h-full">
           <StatCard
-            title="Empty Bottles"
+            title="Empty"
             value={emptyBottles}
             icon={CircleDot}
             color="orange"
-            description="Need refilling"
           />
         </Link>
-        <Link href="/customers" className="block">
+        <Link href="/customers" className="block h-full">
           <StatCard
-            title="Bottles Out"
+            title="Out"
             value={bottlesWithCustomers}
             icon={PackageCheck}
             color="purple"
-            description="With customers"
           />
         </Link>
       </div>
@@ -240,13 +248,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Tank and Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TankVisualization
-          capacity={mainTank.capacityLiters}
-          currentLevel={mainTank.currentLevelLiters}
-          label="Main Storage Tank"
-        />
-
+      <div className="grid grid-cols-1 gap-6">
         <Card className="overflow-hidden">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2">

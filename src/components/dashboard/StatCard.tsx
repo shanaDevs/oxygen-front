@@ -53,37 +53,37 @@ export function StatCard({ title, value, icon: Icon, trend, color = 'cyan', desc
   const config = colorConfig[color];
 
   return (
-    <Card className="relative overflow-hidden hover:shadow-lg transition-all duration-300 border-0 shadow-sm bg-card">
+    <Card className="relative overflow-hidden hover:shadow-lg transition-all duration-300 border-0 shadow-sm bg-card h-full">
       <div className={cn('absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-10 bg-gradient-to-br', config.gradient)} />
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold tracking-tight">{value}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold tracking-tight">{value}</p>
             {trend && (
               <div className="flex items-center gap-1.5">
-                <Badge 
+                <Badge
                   variant="secondary"
                   className={cn(
-                    'gap-1 font-medium',
+                    'gap-1 font-medium text-[10px]',
                     trend.isPositive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                   )}
                 >
                   {trend.isPositive ? (
-                    <TrendingUp className="h-3 w-3" />
+                    <TrendingUp className="h-2.5 w-2.5" />
                   ) : (
-                    <TrendingDown className="h-3 w-3" />
+                    <TrendingDown className="h-2.5 w-2.5" />
                   )}
                   {Math.abs(trend.value)}%
                 </Badge>
-                <span className="text-xs text-muted-foreground">vs yesterday</span>
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">vs yesterday</span>
               </div>
             )}
             {description && (
               <p className="text-xs text-muted-foreground">{description}</p>
             )}
           </div>
-          <div className={cn('p-3 rounded-xl', config.bg)}>
+          <div className={cn('p-2 rounded-xl', config.bg)}>
             <Icon className={cn('h-6 w-6', config.icon)} />
           </div>
         </div>

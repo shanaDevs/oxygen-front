@@ -2,16 +2,19 @@
 
 import { Customer, OxygenBottle, CustomerTransaction } from '@/types';
 import { Card, CardContent, Badge, Separator } from '@/components/ui';
-import { User, Hospital, Factory, Home, Phone, Package, Star, AlertTriangle, Container } from 'lucide-react';
+import { User, Hospital, Factory, Home, Phone, Package, Star, AlertTriangle, Container, Eye, Download } from 'lucide-react';
+import { Button } from '../ui';
+import { pdfService } from '@/services';
 
 interface CustomerCardProps {
   customer: Customer;
   bottles?: OxygenBottle[];
   transactions?: CustomerTransaction[];
   onClick?: (customer: Customer) => void;
+  onPreview?: (url: string, title: string) => void;
 }
 
-export function CustomerCard({ customer, bottles = [], transactions = [], onClick }: CustomerCardProps) {
+export function CustomerCard({ customer, bottles = [], transactions = [], onClick, onPreview }: CustomerCardProps) {
   const customerBottles = bottles.filter((b) => b.customerId === customer.id);
 
   const getCustomerIcon = () => {
@@ -40,12 +43,40 @@ export function CustomerCard({ customer, bottles = [], transactions = [], onClic
               </div>
             </div>
           </div>
-          {customer.totalCredit > 0 && (
-            <Badge variant="destructive" className="gap-1">
-              <AlertTriangle className="h-3 w-3" />
-              Rs. {customer.totalCredit.toLocaleString()}
-            </Badge>
-          )}
+          <div className="flex flex-col items-end gap-2">
+            {customer.totalCredit > 0 && (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Rs. {customer.totalCredit.toLocaleString()}
+              </Badge>
+            )}
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-primary"
+                title="Preview Statement"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPreview?.(pdfService.getCustomerStatementUrl(customer.id), `${customer.name} - Statement`);
+                }}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-slate-500"
+                title="Download Statement"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  pdfService.downloadCustomerStatement(customer.id, customer.name);
+                }}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mt-4">
@@ -54,7 +85,7 @@ export function CustomerCard({ customer, bottles = [], transactions = [], onClic
               <Package className="h-3 w-3" />
               Bottles
             </div>
-            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{customer.bottlesInHand}</p>
+            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{customerBottles.length}</p>
           </div>
           <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-xl">
             <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">

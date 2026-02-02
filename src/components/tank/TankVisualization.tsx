@@ -8,11 +8,12 @@ import { cn } from '@/lib/utils';
 import { Droplets, Gauge, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface TankVisualizationProps {
-  capacity: number;
-  currentLevel: number;
-  previousLevel?: number;
+  capacity: number; // in KG
+  currentLevel: number; // in KG
+  previousLevel?: number; // in KG
   showAnimation?: boolean;
   label?: string;
+  unit?: string; // Default to kg
 }
 
 export function TankVisualization({
@@ -21,13 +22,18 @@ export function TankVisualization({
   previousLevel,
   showAnimation = false,
   label = 'Main Tank',
+  unit = 'kg',
 }: TankVisualizationProps) {
   const [animatedLevel, setAnimatedLevel] = useState(previousLevel || currentLevel);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
 
-  const percentage = (animatedLevel / capacity) * 100;
+  const percentage = capacity > 0 ? (animatedLevel / capacity) * 100 : 0;
   const refillAmount = previousLevel ? currentLevel - previousLevel : 0;
+
+  // Convert kg to tons
+  const animatedTons = animatedLevel / 1000;
+  const capacityTons = capacity / 1000;
 
   useEffect(() => {
     if (showAnimation && previousLevel !== undefined && previousLevel < currentLevel) {
@@ -97,72 +103,75 @@ export function TankVisualization({
   const StatusIcon = status.icon;
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-2">
+    <Card className="overflow-hidden border-2 shadow-xl">
+      <CardHeader className="pb-2 bg-muted/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn('p-2.5 rounded-xl bg-gradient-to-br', config.gradient, 'shadow-lg', config.glow)}>
-              <Droplets className="h-5 w-5 text-white" />
+            <div className={cn('p-3 rounded-2xl bg-gradient-to-br', config.gradient, 'shadow-lg', config.glow)}>
+              <Droplets className="h-6 w-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg">{label}</CardTitle>
+              <CardTitle className="text-xl font-bold">{label}</CardTitle>
               <div className="flex items-center gap-2 mt-1">
-                <StatusIcon className={cn('h-3.5 w-3.5', config.text)} />
-                <span className={cn('text-sm font-medium', config.text)}>{status.text}</span>
+                <StatusIcon className={cn('h-4 w-4', config.text)} />
+                <span className={cn('text-sm font-bold uppercase tracking-wider', config.text)}>{status.text}</span>
               </div>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold tracking-tight">{animatedLevel.toFixed(0)} <span className="text-lg text-muted-foreground font-normal">L</span></p>
-            <p className="text-sm text-muted-foreground">of {capacity.toLocaleString()} L</p>
+            <div className="flex flex-col items-end">
+              <p className="text-3xl font-black tracking-tight flex items-baseline gap-1">
+                {animatedLevel.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                <span className="text-base text-muted-foreground font-medium">{unit}</span>
+              </p>
+              <Badge variant="outline" className="mt-1 font-mono text-xs bg-white/50">
+                {animatedTons.toFixed(3)} Tons
+              </Badge>
+            </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* Modern Tank visualization */}
+      <CardContent className="space-y-6 pt-6">
         <div className="relative">
-          <div className="relative w-full h-56 bg-gradient-to-b from-muted/30 to-muted/50 rounded-2xl overflow-hidden border-2 border-border shadow-inner">
-            {/* Grid overlay */}
-            <div className="absolute inset-0 opacity-10">
+          <div className="relative w-full h-64 bg-gradient-to-b from-slate-100 to-slate-200 rounded-3xl overflow-hidden border-4 border-slate-300 shadow-2xl">
+            {/* Grid lines */}
+            <div className="absolute inset-0 opacity-20">
               {[...Array(10)].map((_, i) => (
-                <div key={i} className="absolute w-full border-t border-foreground" style={{ top: `${i * 10}%` }} />
+                <div key={i} className="absolute w-full border-t border-slate-600" style={{ top: `${i * 10}%` }} />
               ))}
             </div>
 
-            {/* Tank liquid */}
+            {/* Liquid */}
             <div
-              className={cn('absolute bottom-0 left-0 right-0 bg-gradient-to-t transition-all duration-500', config.gradient)}
+              className={cn('absolute bottom-0 left-0 right-0 bg-gradient-to-t transition-all duration-700 ease-out', config.gradient)}
               style={{ height: `${percentage}%` }}
             >
-              {/* Glossy overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/10" />
-              
-              {/* Wave effect */}
-              <div className="absolute top-0 left-0 right-0 h-6 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-white/30 via-transparent to-white/20" />
+              <div className="absolute top-0 left-0 right-0 h-8 overflow-hidden">
                 <svg
-                  className="absolute w-[200%] animate-wave"
+                  className="absolute w-[200%] animate-wave opacity-50"
                   viewBox="0 0 200 12"
                   preserveAspectRatio="none"
                 >
                   <path
                     d="M0,6 Q25,0 50,6 T100,6 T150,6 T200,6 V12 H0 Z"
-                    fill="rgba(255,255,255,0.25)"
+                    fill="white"
                   />
                 </svg>
               </div>
 
-              {/* Bubbles during animation */}
               {showBubbles && (
                 <div className="absolute inset-0 overflow-hidden">
-                  {[...Array(20)].map((_, i) => (
+                  {[...Array(25)].map((_, i) => (
                     <div
                       key={i}
-                      className="absolute w-2 h-2 bg-white/50 rounded-full animate-bubble"
+                      className="absolute w-2 h-2 bg-white/40 rounded-full animate-bubble"
                       style={{
                         left: `${Math.random() * 100}%`,
-                        animationDelay: `${Math.random() * 1}s`,
-                        animationDuration: `${1 + Math.random() * 1}s`,
+                        bottom: `${Math.random() * 20}%`,
+                        animationDelay: `${Math.random() * 1.5}s`,
+                        animationDuration: `${1 + Math.random() * 2}s`,
                       }}
                     />
                   ))}
@@ -170,70 +179,76 @@ export function TankVisualization({
               )}
             </div>
 
-            {/* Level markers */}
+            {/* Percentage Marks */}
             {[25, 50, 75].map((mark) => (
               <div
                 key={mark}
-                className="absolute left-0 right-0 border-t border-dashed border-muted-foreground/30"
+                className="absolute left-0 right-0 border-t-2 border-dashed border-slate-400/40"
                 style={{ bottom: `${mark}%` }}
               >
-                <Badge variant="secondary" className="absolute right-2 -top-3 text-[10px] h-5">
-                  {((mark / 100) * capacity).toLocaleString()} L
-                </Badge>
+                <div className="absolute right-3 -top-2 px-2 py-0.5 bg-white/80 backdrop-blur-sm rounded text-[9px] font-bold text-slate-500 shadow-sm border border-slate-200">
+                  {((mark / 100) * capacity).toLocaleString()} {unit}
+                </div>
               </div>
             ))}
 
-            {/* Tank label */}
-            <div className="absolute top-3 left-3">
-              <Badge className={cn('gap-1.5 font-semibold', config.badge)}>
-                <Droplets className="h-3 w-3" />
-                O₂ Tank
+            <div className="absolute top-4 left-4">
+              <Badge className={cn('gap-1.5 px-3 py-1 text-xs font-bold shadow-md uppercase tracking-wider', config.badge)}>
+                <Droplets className="h-3.5 w-3.5 rotate-180" />
+                Oxygen Supply
               </Badge>
             </div>
 
-            {/* Percentage badge */}
-            <div className="absolute top-3 right-3">
-              <div className={cn('px-3 py-1.5 rounded-lg font-bold text-xl', config.badge)}>
+            <div className="absolute bottom-6 right-6 flex flex-col items-end">
+              <div className={cn('px-4 py-2 rounded-2xl font-black text-3xl shadow-xl border-2 backdrop-blur-md', config.badge, 'border-white/50')}>
                 {percentage.toFixed(1)}%
+              </div>
+              <div className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/50 px-2 py-1 rounded">
+                Real-time Status
               </div>
             </div>
           </div>
         </div>
 
-        {/* Refill indicator */}
         {isAnimating && refillAmount > 0 && (
-          <div className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 py-3 px-4 rounded-xl animate-pulse border border-emerald-200">
-            <TrendingUp className="h-5 w-5" />
-            <span className="font-semibold">Filling: +{refillAmount.toLocaleString()} L</span>
+          <div className="flex items-center justify-between bg-emerald-500/10 text-emerald-700 py-4 px-5 rounded-2xl border-2 border-emerald-500/20 shadow-inner">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500 rounded-full text-white animate-bounce">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <span className="font-bold text-lg italic tracking-tight uppercase">Replenishing Tank</span>
+            </div>
+            <div className="text-right">
+              <span className="block text-xs font-bold opacity-70 uppercase">Amount Received</span>
+              <span className="text-2xl font-black">+{refillAmount.toLocaleString()} {unit}</span>
+            </div>
           </div>
         )}
 
-        {/* Quick stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="text-center p-4 bg-muted/50 rounded-xl border border-border/50">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Capacity</p>
-            <p className="text-xl font-bold mt-1">{capacity.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Liters</p>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 shadow-sm group hover:border-slate-300 transition-colors">
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 group-hover:text-primary transition-colors">Total Capacity</p>
+            <p className="text-xl font-black tracking-tight">{capacity.toLocaleString()}</p>
+            <p className="text-[10px] font-bold text-slate-400">{unit} ({capacityTons.toFixed(1)}T)</p>
           </div>
-          <div className={cn('text-center p-4 rounded-xl border border-border/50', config.badge)}>
-            <p className="text-xs font-medium uppercase tracking-wide opacity-70">Available</p>
-            <p className="text-xl font-bold mt-1">{animatedLevel.toFixed(0)}</p>
-            <p className="text-xs opacity-70">Liters</p>
+          <div className={cn('text-center p-4 rounded-2xl border-2 shadow-md group', config.badge, 'border-current/10')}>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-70">Current Available</p>
+            <p className="text-xl font-black tracking-tight">{animatedLevel.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-[10px] font-bold opacity-70">{unit} ({animatedTons.toFixed(3)}T)</p>
           </div>
-          <div className="text-center p-4 bg-muted/50 rounded-xl border border-border/50">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Empty Space</p>
-            <p className="text-xl font-bold mt-1">{(capacity - animatedLevel).toFixed(0)}</p>
-            <p className="text-xs text-muted-foreground">Liters</p>
+          <div className="text-center p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 shadow-sm group hover:border-slate-300 transition-colors">
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 group-hover:text-red-500 transition-colors">Empty Space</p>
+            <p className="text-xl font-black tracking-tight">{(capacity - animatedLevel).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-[10px] font-bold text-slate-400">{unit}</p>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Fill Level</span>
-            <span className="font-semibold">{percentage.toFixed(1)}%</span>
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Tank Saturation</span>
+            <span className={cn('text-sm font-black px-2 py-0.5 rounded', config.badge)}>{percentage.toFixed(1)}% Full</span>
           </div>
-          <Progress value={percentage} className="h-3" />
+          <Progress value={percentage} className="h-4 rounded-full border border-slate-200 shadow-inner" />
         </div>
       </CardContent>
     </Card>

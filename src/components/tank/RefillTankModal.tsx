@@ -7,8 +7,8 @@ import { Fuel, Droplets, Banknote, AlertCircle } from 'lucide-react';
 interface RefillTankModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onRefill: (liters: number, supplierId: string, paymentInfo: {
-    pricePerLiter: number;
+  onRefill: (kg: number, supplierId: string, paymentInfo: {
+    pricePerKg: number;
     amountPaid: number;
     paymentStatus: 'full' | 'partial' | 'outstanding';
   }) => void;
@@ -25,19 +25,19 @@ export function RefillTankModal({
   capacity,
   suppliers,
 }: RefillTankModalProps) {
-  const [liters, setLiters] = useState<number>(0);
+  const [kg, setKg] = useState<number>(0);
   const [supplierId, setSupplierId] = useState<string>('');
-  const [pricePerLiter, setPricePerLiter] = useState<number>(40);
+  const [pricePerKg, setPricePerKg] = useState<number>(40);
   const [amountPaid, setAmountPaid] = useState<number>(0);
   const [paymentStatus, setPaymentStatus] = useState<'full' | 'partial' | 'outstanding'>('full');
 
   const maxRefill = capacity - currentLevel;
-  const totalAmount = liters * pricePerLiter;
+  const totalAmount = kg * pricePerKg;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (liters > 0 && supplierId) {
-      onRefill(liters, supplierId, { pricePerLiter, amountPaid, paymentStatus });
+    if (kg > 0 && supplierId) {
+      onRefill(kg, supplierId, { pricePerKg, amountPaid, paymentStatus });
       onClose();
     }
   };
@@ -80,36 +80,36 @@ export function RefillTankModal({
 
           <div className="space-y-2">
             <Label className="flex items-center justify-between">
-              <span>Liters to Add</span>
-              <Badge variant="secondary">Max: {maxRefill.toLocaleString()} L</Badge>
+              <span>Amount to Add (kg)</span>
+              <Badge variant="secondary">Max space: {maxRefill.toLocaleString()} kg</Badge>
             </Label>
             <Input
               type="number"
-              value={liters || ''}
+              value={kg || ''}
               onChange={(e) => {
                 const val = Number(e.target.value);
-                setLiters(Math.min(val, maxRefill));
+                setKg(Math.min(val, maxRefill));
                 if (paymentStatus === 'full') {
-                  setAmountPaid(val * pricePerLiter);
+                  setAmountPaid(val * pricePerKg);
                 }
               }}
               min={0}
               max={maxRefill}
-              placeholder="Enter liters..."
+              placeholder="Enter kilograms..."
             />
-            <Progress value={(liters / maxRefill) * 100} className="h-2" />
+            <Progress value={(kg / maxRefill) * 100} className="h-2" />
           </div>
 
           <div className="space-y-2">
-            <Label>Price per Liter (Rs.)</Label>
+            <Label>Price per Kg (Rs.)</Label>
             <Input
               type="number"
-              value={pricePerLiter || ''}
+              value={pricePerKg || ''}
               onChange={(e) => {
                 const val = Number(e.target.value);
-                setPricePerLiter(val);
+                setPricePerKg(val);
                 if (paymentStatus === 'full') {
-                  setAmountPaid(liters * val);
+                  setAmountPaid(kg * val);
                 }
               }}
               min={0}
@@ -136,15 +136,14 @@ export function RefillTankModal({
                   type="button"
                   variant={paymentStatus === status ? 'default' : 'outline'}
                   onClick={() => handlePaymentStatusChange(status)}
-                  className={`flex-1 ${
-                    paymentStatus === status
-                      ? status === 'full'
-                        ? 'bg-green-500 hover:bg-green-600'
-                        : status === 'partial'
+                  className={`flex-1 ${paymentStatus === status
+                    ? status === 'full'
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : status === 'partial'
                         ? 'bg-yellow-500 hover:bg-yellow-600'
                         : 'bg-destructive hover:bg-destructive/90'
-                      : ''
-                  }`}
+                    : ''
+                    }`}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </Button>
@@ -173,7 +172,7 @@ export function RefillTankModal({
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" disabled={!liters || !supplierId} className="flex-1 gap-2">
+            <Button type="submit" disabled={!kg || !supplierId} className="flex-1 gap-2">
               <Droplets className="h-4 w-4" />
               Refill Tank
             </Button>

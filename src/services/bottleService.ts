@@ -1,162 +1,267 @@
-import { OxygenBottle, BottleType, ApiResponse, BottleFillHistory } from '@/types';
-import { oxygenBottles as mockBottles, bottleTypes as mockTypes } from '@/data';
 import { API_CONFIG, apiFetch } from './config';
+import { OxygenBottle, BottleType, BottleLedgerEntry, BottleFillHistory, ApiResponse } from '@/types';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
+// Bottle API
 export const bottleService = {
   // Get all bottles
-  async getAll(): Promise<OxygenBottle[]> {
+  getAll: async (params?: { status?: string; location?: string; customerId?: string }): Promise<ApiResponse<OxygenBottle[]>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(300);
-      return mockBottles;
+      const mockBottles: OxygenBottle[] = [
+        { id: '1', serialNumber: 'BOT-001', capacityLiters: 40, status: 'filled', location: 'center', fillCount: 5, issueCount: 4 },
+        { id: '2', serialNumber: 'BOT-002', capacityLiters: 40, status: 'empty', location: 'center', fillCount: 3, issueCount: 3 },
+        { id: '3', serialNumber: 'BOT-003', capacityLiters: 20, status: 'with_customer', location: 'customer', customerId: 'cust-1', customerName: 'Test Customer', fillCount: 10, issueCount: 10 },
+      ];
+      const filtered = mockBottles.filter(b => {
+        if (params?.status && b.status !== params.status) return false;
+        if (params?.location && b.location !== params.location) return false;
+        if (params?.customerId && b.customerId !== params.customerId) return false;
+        return true;
+      });
+      return { success: true, data: filtered };
     }
-    const response = await apiFetch<ApiResponse<OxygenBottle[]>>(API_CONFIG.ENDPOINTS.BOTTLES);
-    return response.data;
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.location) queryParams.append('location', params.location);
+    if (params?.customerId) queryParams.append('customerId', params.customerId);
+    return apiFetch<ApiResponse<OxygenBottle[]>>(`/bottles?${queryParams.toString()}`);
   },
 
-  // Get bottles by status
-  async getByStatus(status: 'empty' | 'filled' | 'with_customer'): Promise<OxygenBottle[]> {
+  // Get bottles in center
+  getInCenter: async (status?: string): Promise<ApiResponse<OxygenBottle[]>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(300);
-      return mockBottles.filter(b => b.status === status);
+      return bottleService.getAll({ location: 'center', status });
     }
-    const response = await apiFetch<ApiResponse<OxygenBottle[]>>(
-      `${API_CONFIG.ENDPOINTS.BOTTLES}?status=${status}`
-    );
-    return response.data;
+    const queryParams = status ? `?status=${status}` : '';
+    return apiFetch<ApiResponse<OxygenBottle[]>>(`/bottles/in-center${queryParams}`);
+  },
+
+  // Get filled bottles
+  getFilled: async (): Promise<ApiResponse<OxygenBottle[]>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      return bottleService.getAll({ status: 'filled', location: 'center' });
+    }
+    return apiFetch<ApiResponse<OxygenBottle[]>>('/bottles/filled');
   },
 
   // Get bottle by ID
-  async getById(id: string): Promise<OxygenBottle | null> {
+  getById: async (id: string): Promise<ApiResponse<OxygenBottle>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(200);
-      return mockBottles.find(b => b.id === id) || null;
+      return { success: true, data: { id, serialNumber: 'BOT-001', capacityLiters: 40, status: 'filled', location: 'center', fillCount: 5, issueCount: 4 } };
     }
-    const response = await apiFetch<ApiResponse<OxygenBottle>>(`${API_CONFIG.ENDPOINTS.BOTTLES}/${id}`);
-    return response.data;
+    return apiFetch<ApiResponse<OxygenBottle>>(`/bottles/${id}`);
   },
 
-  // Create bottle
-  async create(bottle: { serialNumber: string; capacityLiters: number }): Promise<OxygenBottle> {
+  // Get bottle by serial number
+  getBySerial: async (serial: string): Promise<ApiResponse<OxygenBottle>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(500);
-      return {
-        id: `bot-${Date.now()}`,
-        serialNumber: bottle.serialNumber,
-        capacityLiters: bottle.capacityLiters,
-        status: 'empty',
-      };
+      return { success: true, data: { id: 'bot-1', serialNumber: serial, capacityLiters: 40, status: 'filled', location: 'center', fillCount: 5, issueCount: 4 } };
     }
-    const response = await apiFetch<ApiResponse<OxygenBottle>>(API_CONFIG.ENDPOINTS.BOTTLES, {
+    return apiFetch<ApiResponse<OxygenBottle>>(`/bottles/serial/${serial}`);
+  },
+
+  // Receive empty bottle (returned or new)
+  receiveBottle: async (data: { serialNumber?: string; bottleTypeId?: string; customerId?: string; notes?: string }): Promise<ApiResponse<OxygenBottle>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      return { success: true, data: { id: 'new-bot', serialNumber: data.serialNumber || 'MOCK-SN', capacityLiters: 40, status: 'empty', location: 'center', fillCount: 0, issueCount: 0 }, message: 'Bottle received' };
+    }
+    return apiFetch<ApiResponse<OxygenBottle>>('/bottles/receive', {
       method: 'POST',
-      body: JSON.stringify(bottle),
+      body: JSON.stringify(data)
     });
-    return response.data;
+  },
+
+  // Receive multiple bottles (bulk)
+  receiveBulk: async (data: { items: Array<{ bottleTypeId: string; count: number }>; customerId?: string; notes?: string }): Promise<ApiResponse<{ count: number }>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      return { success: true, data: { count: data.items.reduce((sum, i) => sum + i.count, 0) }, message: 'Bottles received (Mock)' };
+    }
+    return apiFetch<ApiResponse<{ count: number }>>('/bottles/receive-bulk', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  // Create new bottle
+  create: async (data: Partial<OxygenBottle>): Promise<ApiResponse<OxygenBottle>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      const newBottle: OxygenBottle = {
+        id: `bot-${Date.now()}`,
+        serialNumber: data.serialNumber || 'NEW-001',
+        capacityLiters: data.capacityLiters || 40,
+        bottleTypeId: data.bottleTypeId,
+        status: 'empty',
+        location: 'center',
+        fillCount: 0,
+        issueCount: 0,
+        ownerId: data.ownerId,
+        ownerName: data.ownerName
+      };
+      return { success: true, data: newBottle, message: 'Bottle created' };
+    }
+    return apiFetch<ApiResponse<OxygenBottle>>('/bottles', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   },
 
   // Update bottle
-  async update(id: string, data: Partial<OxygenBottle>): Promise<OxygenBottle> {
+  update: async (id: string, data: Partial<OxygenBottle>): Promise<ApiResponse<OxygenBottle>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(400);
-      const bottle = mockBottles.find(b => b.id === id);
-      if (!bottle) throw new Error('Bottle not found');
-      return { ...bottle, ...data };
+      return { success: true, data: { id, serialNumber: data.serialNumber || 'BOT-001', capacityLiters: data.capacityLiters || 40, status: data.status || 'empty', location: data.location || 'center', fillCount: 0, issueCount: 0 }, message: 'Bottle updated' };
     }
-    const response = await apiFetch<ApiResponse<OxygenBottle>>(`${API_CONFIG.ENDPOINTS.BOTTLES}/${id}`, {
+    return apiFetch<ApiResponse<OxygenBottle>>(`/bottles/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     });
-    return response.data;
   },
 
-  // Fill multiple bottles (from tank)
-  async fillBottles(bottleIds: string[]): Promise<OxygenBottle[]> {
+  // Fill bottles
+  fillBottles: async (bottleIds: string[]): Promise<ApiResponse<OxygenBottle[]> & { tankLevel?: number; kgUsed?: number }> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(500);
-      return mockBottles
-        .filter(b => bottleIds.includes(b.id))
-        .map(b => ({ ...b, status: 'filled' as const, filledDate: new Date().toISOString() }));
+      const mockFilledBottles: OxygenBottle[] = bottleIds.map((id, index) => ({
+        id,
+        serialNumber: `BOT-${String(index + 1).padStart(3, '0')}`,
+        capacityLiters: 40,
+        status: 'filled' as const,
+        location: 'center' as const,
+        filledDate: new Date().toISOString(),
+        fillCount: 1,
+        issueCount: 0
+      }));
+      return {
+        success: true,
+        data: mockFilledBottles,
+        message: `${bottleIds.length} bottles filled`,
+        tankLevel: 8500,
+        kgUsed: bottleIds.length * 8
+      };
     }
-    const response = await apiFetch<ApiResponse<OxygenBottle[]>>(
-      `${API_CONFIG.ENDPOINTS.BOTTLES}/fill`,
-      { method: 'POST', body: JSON.stringify({ bottleIds }) }
-    );
-    return response.data;
+    return apiFetch<ApiResponse<OxygenBottle[]> & { tankLevel?: number; kgUsed?: number }>('/bottles/fill', {
+      method: 'POST',
+      body: JSON.stringify({ bottleIds })
+    });
   },
 
-  // Delete bottle
-  async delete(id: string): Promise<void> {
+  // Get fill history
+  getFillHistory: async (limit?: number): Promise<ApiResponse<BottleFillHistory[]>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(300);
-      return;
+      const mockHistory: BottleFillHistory[] = [
+        { id: '1', bottleId: 'bot-1', bottleSerialNumber: 'BOT-001', serialNumber: 'BOT-001', bottleCapacity: 40, capacityLiters: 40, kgUsed: 8, litersUsed: 40, createdAt: new Date().toISOString() },
+      ];
+      return { success: true, data: mockHistory };
     }
-    await apiFetch(`${API_CONFIG.ENDPOINTS.BOTTLES}/${id}`, { method: 'DELETE' });
+    const queryParams = limit ? `?limit=${limit}` : '';
+    return apiFetch<ApiResponse<BottleFillHistory[]>>(`/bottles/fill-history${queryParams}`);
   },
 
+  // Get bottle ledger
+  getBottleLedger: async (bottleId: string): Promise<ApiResponse<{ bottle: OxygenBottle; ledger: BottleLedgerEntry[] }>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      return {
+        success: true,
+        data: {
+          bottle: { id: bottleId, serialNumber: 'BOT-001', capacityLiters: 40, status: 'filled', location: 'center', fillCount: 5, issueCount: 4 },
+          ledger: []
+        }
+      };
+    }
+    return apiFetch<ApiResponse<{ bottle: OxygenBottle; ledger: BottleLedgerEntry[] }>>(`/bottles/${bottleId}/ledger`);
+  },
+
+  // Get all ledger entries
+  getLedgerEntries: async (params?: { bottleId?: string; customerId?: string; operationType?: string; limit?: number }): Promise<ApiResponse<BottleLedgerEntry[]>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      return { success: true, data: [] };
+    }
+    const queryParams = new URLSearchParams();
+    if (params?.bottleId) queryParams.append('bottleId', params.bottleId);
+    if (params?.customerId) queryParams.append('customerId', params.customerId);
+    if (params?.operationType) queryParams.append('operationType', params.operationType);
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    return apiFetch<ApiResponse<BottleLedgerEntry[]>>(`/bottles/ledger?${queryParams.toString()}`);
+  },
+
+  // Get customer bottle ledger
+  getCustomerBottleLedger: async (customerId: string): Promise<ApiResponse<{ customer: { id: string; name: string; phone?: string; bottlesInHand: number; ownedBottles: number; totalCredit: number }; currentBottles: OxygenBottle[]; ledger: BottleLedgerEntry[] }>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      return {
+        success: true,
+        data: {
+          customer: { id: customerId, name: 'Test Customer', bottlesInHand: 2, ownedBottles: 0, totalCredit: 0 },
+          currentBottles: [],
+          ledger: []
+        }
+      };
+    }
+    return apiFetch<ApiResponse<{ customer: { id: string; name: string; phone?: string; bottlesInHand: number; ownedBottles: number; totalCredit: number }; currentBottles: OxygenBottle[]; ledger: BottleLedgerEntry[] }>>(`/bottles/ledger/customer/${customerId}`);
+  },
+
+  // Get ledger summary
+  getLedgerSummary: async (params?: { startDate?: string; endDate?: string }): Promise<ApiResponse<{ operationCounts: Record<string, number>; totalKgUsed: number; totalAmount: number; recentEntries: BottleLedgerEntry[] }>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      return { success: true, data: { operationCounts: {}, totalKgUsed: 0, totalAmount: 0, recentEntries: [] } };
+    }
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    return apiFetch<ApiResponse<{ operationCounts: Record<string, number>; totalKgUsed: number; totalAmount: number; recentEntries: BottleLedgerEntry[] }>>(`/bottles/ledger/summary?${queryParams.toString()}`);
+  }
+};
+
+// Bottle Types API
+export const bottleTypeService = {
   // Get all bottle types
-  async getTypes(): Promise<BottleType[]> {
+  getAll: async (active?: boolean): Promise<ApiResponse<BottleType[]>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(200);
-      return mockTypes;
+      const mockTypes: BottleType[] = [
+        { id: 'type-1', name: '10L Cylinder', capacityLiters: 10, refillKg: 2, pricePerFill: 200, depositAmount: 500, isActive: true },
+        { id: 'type-2', name: '20L Cylinder', capacityLiters: 20, refillKg: 4, pricePerFill: 350, depositAmount: 750, isActive: true },
+        { id: 'type-3', name: '40L Cylinder', capacityLiters: 40, refillKg: 8, pricePerFill: 600, depositAmount: 1000, isActive: true },
+      ];
+      return { success: true, data: active !== undefined ? mockTypes.filter(t => t.isActive === active) : mockTypes };
     }
-    const response = await apiFetch<ApiResponse<BottleType[]>>(API_CONFIG.ENDPOINTS.BOTTLE_TYPES);
-    return response.data;
+    const queryParams = active !== undefined ? `?active=${active}` : '';
+    return apiFetch<ApiResponse<BottleType[]>>(`/bottles/types${queryParams}`);
+  },
+
+  // Get bottle type by ID
+  getById: async (id: string): Promise<ApiResponse<BottleType>> => {
+    if (API_CONFIG.USE_MOCK_DATA) {
+      return { success: true, data: { id, name: '40L Cylinder', capacityLiters: 40, refillKg: 8, pricePerFill: 600, depositAmount: 1000, isActive: true } };
+    }
+    return apiFetch<ApiResponse<BottleType>>(`/bottles/types/${id}`);
   },
 
   // Create bottle type
-  async createType(type: Omit<BottleType, 'id'>): Promise<BottleType> {
+  create: async (data: Omit<BottleType, 'id'>): Promise<ApiResponse<BottleType>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(500);
-      return {
-        id: `bt-${Date.now()}`,
-        ...type,
-      };
+      const newType: BottleType = { id: `type-${Date.now()}`, ...data };
+      return { success: true, data: newType, message: 'Bottle type created' };
     }
-    const response = await apiFetch<ApiResponse<BottleType>>(API_CONFIG.ENDPOINTS.BOTTLE_TYPES, {
+    return apiFetch<ApiResponse<BottleType>>('/bottles/types', {
       method: 'POST',
-      body: JSON.stringify(type),
+      body: JSON.stringify(data)
     });
-    return response.data;
   },
 
   // Update bottle type
-  async updateType(id: string, data: Partial<BottleType>): Promise<BottleType> {
+  update: async (id: string, data: Partial<BottleType>): Promise<ApiResponse<BottleType>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(400);
-      const type = mockTypes.find(t => t.id === id);
-      if (!type) throw new Error('Bottle type not found');
-      return { ...type, ...data };
+      return { success: true, data: { id, name: data.name || '40L Cylinder', capacityLiters: data.capacityLiters || 40, refillKg: data.refillKg || 8, pricePerFill: data.pricePerFill || 600, depositAmount: data.depositAmount || 1000, isActive: data.isActive ?? true }, message: 'Bottle type updated' };
     }
-    const response = await apiFetch<ApiResponse<BottleType>>(`${API_CONFIG.ENDPOINTS.BOTTLE_TYPES}/${id}`, {
+    return apiFetch<ApiResponse<BottleType>>(`/bottles/types/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     });
-    return response.data;
   },
 
-  // Get bottle fill history
-  async getFillHistory(limit?: number): Promise<BottleFillHistory[]> {
+  // Delete bottle type
+  delete: async (id: string): Promise<ApiResponse<null>> => {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await delay(300);
-      // Generate mock fill history
-      const mockHistory: BottleFillHistory[] = mockBottles
-        .filter(b => b.filledDate)
-        .map(b => ({
-          id: `bfh-${b.id}`,
-          bottleId: b.id,
-          bottleSerialNumber: b.serialNumber,
-          bottleCapacity: b.capacityLiters,
-          litersUsed: b.capacityLiters,
-          createdAt: b.filledDate || new Date().toISOString(),
-        }))
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      return limit ? mockHistory.slice(0, limit) : mockHistory;
+      return { success: true, data: null, message: 'Bottle type deleted' };
     }
-    const url = limit 
-      ? `${API_CONFIG.ENDPOINTS.BOTTLE_FILL_HISTORY}?limit=${limit}` 
-      : API_CONFIG.ENDPOINTS.BOTTLE_FILL_HISTORY;
-    const response = await apiFetch<ApiResponse<BottleFillHistory[]>>(url);
-    return response.data;
-  },
+    return apiFetch<ApiResponse<null>>(`/bottles/types/${id}`, {
+      method: 'DELETE'
+    });
+  }
 };

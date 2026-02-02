@@ -4,10 +4,10 @@
 export const API_CONFIG = {
   // Set to true to use dummy data, false to use real backend
   USE_MOCK_DATA: false,
-  
+
   // Express.js backend URL
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-  
+
   // API endpoints
   ENDPOINTS: {
     // Legacy endpoints
@@ -16,7 +16,7 @@ export const API_CONFIG = {
     SALES: '/sales',
     USERS: '/users',
     AUTH: '/auth',
-    
+
     // Oxygen Center endpoints
     CUSTOMERS: '/customers',
     CUSTOMER_TRANSACTIONS: '/customer-transactions',
@@ -29,7 +29,7 @@ export const API_CONFIG = {
     TANK_FILL_HISTORY: '/tank/fill-history',
     DASHBOARD: '/dashboard',
   },
-  
+
   // Request timeout in milliseconds
   TIMEOUT: 10000,
 };
@@ -38,6 +38,8 @@ export const API_CONFIG = {
 export const getApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
+
+import { toast } from 'sonner';
 
 // Generic fetch wrapper with error handling
 export async function apiFetch<T>(
@@ -61,15 +63,28 @@ export async function apiFetch<T>(
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      // Extract message from nested error structure if it exists
+      const message = error.error?.message || error.message || `HTTP error! status: ${response.status}`;
+      toast.error(message);
+      throw new Error(message);
     }
 
     return response.json();
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Request timeout');
+      const message = 'Request timeout';
+      toast.error(message);
+      throw new Error(message);
     }
+
+    // For other unexpected errors that aren't already handled above
+    if (error instanceof Error && !endpoint.includes('auth')) {
+      // Avoid toasting auth errors if they might be handled specifically
+      // but generally we want to see errors
+      // toast.error(error.message); // Already toasted above if !response.ok
+    }
+
     throw error;
   }
 }
