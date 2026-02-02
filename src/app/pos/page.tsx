@@ -650,7 +650,7 @@ export default function POSPage() {
                             onChange={(e) => updateCartItemSerial(item.uid, e.target.value)}
                           />
                           {item.bottleId && (
-                            <Badge variant="secondary" className="absolute right-2 top-6 h-4 text-[8px] bg-emerald-100 text-emerald-700">
+                            <Badge variant="secondary" className="absolute right-2 top-6 h-4 text-[8px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
                               Linked
                             </Badge>
                           )}

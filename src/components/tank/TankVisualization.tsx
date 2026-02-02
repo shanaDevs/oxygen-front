@@ -134,7 +134,7 @@ export function TankVisualization({
 
       <CardContent className="space-y-6 pt-6">
         <div className="relative">
-          <div className="relative w-full h-64 bg-gradient-to-b from-slate-100 to-slate-200 rounded-3xl overflow-hidden border-4 border-slate-300 shadow-2xl">
+          <div className="relative w-full h-64 bg-gradient-to-b from-slate-100 dark:from-slate-900 to-slate-200 dark:to-slate-950 rounded-3xl overflow-hidden border-4 border-slate-300 dark:border-slate-800 shadow-2xl">
             {/* Grid lines */}
             <div className="absolute inset-0 opacity-20">
               {[...Array(10)].map((_, i) => (
@@ -186,7 +186,7 @@ export function TankVisualization({
                 className="absolute left-0 right-0 border-t-2 border-dashed border-slate-400/40"
                 style={{ bottom: `${mark}%` }}
               >
-                <div className="absolute right-3 -top-2 px-2 py-0.5 bg-white/80 backdrop-blur-sm rounded text-[9px] font-bold text-slate-500 shadow-sm border border-slate-200">
+                <div className="absolute right-3 -top-2 px-2 py-0.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded text-[9px] font-bold text-slate-500 shadow-sm border border-slate-200 dark:border-slate-800">
                   {((mark / 100) * capacity).toLocaleString()} {unit}
                 </div>
               </div>
@@ -203,7 +203,7 @@ export function TankVisualization({
               <div className={cn('px-4 py-2 rounded-2xl font-black text-3xl shadow-xl border-2 backdrop-blur-md', config.badge, 'border-white/50')}>
                 {percentage.toFixed(1)}%
               </div>
-              <div className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/50 px-2 py-1 rounded">
+              <div className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/50 dark:bg-slate-900/50 px-2 py-1 rounded">
                 Real-time Status
               </div>
             </div>
@@ -226,7 +226,7 @@ export function TankVisualization({
         )}
 
         <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 shadow-sm group hover:border-slate-300 transition-colors">
+          <div className="text-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm group hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
             <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 group-hover:text-primary transition-colors">Total Capacity</p>
             <p className="text-xl font-black tracking-tight">{capacity.toLocaleString()}</p>
             <p className="text-[10px] font-bold text-slate-400">{unit} ({capacityTons.toFixed(1)}T)</p>
@@ -236,7 +236,7 @@ export function TankVisualization({
             <p className="text-xl font-black tracking-tight">{animatedLevel.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[10px] font-bold opacity-70">{unit} ({animatedTons.toFixed(3)}T)</p>
           </div>
-          <div className="text-center p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 shadow-sm group hover:border-slate-300 transition-colors">
+          <div className="text-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm group hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
             <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 group-hover:text-red-500 transition-colors">Empty Space</p>
             <p className="text-xl font-black tracking-tight">{(capacity - animatedLevel).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[10px] font-bold text-slate-400">{unit}</p>

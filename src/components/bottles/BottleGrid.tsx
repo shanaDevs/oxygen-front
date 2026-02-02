@@ -11,8 +11,8 @@ interface BottleGridProps {
 }
 
 export function BottleGrid({ bottles, onBottleClick, filter = 'all' }: BottleGridProps) {
-  const filteredBottles = filter === 'all' 
-    ? bottles 
+  const filteredBottles = filter === 'all'
+    ? bottles
     : bottles.filter(b => b.status === filter);
 
   const groupedBottles = filteredBottles.reduce((acc, bottle) => {
@@ -58,16 +58,22 @@ export function BottleGrid({ bottles, onBottleClick, filter = 'all' }: BottleGri
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">{capacity}L Bottles</CardTitle>
-                <div className="flex gap-2">
-                  <Badge variant="default" className="bg-green-500">
-                    {bottles.filter(b => b.status === 'filled').length} filled
-                  </Badge>
-                  <Badge variant="outline">
-                    {bottles.filter(b => b.status === 'empty').length} empty
-                  </Badge>
-                  <Badge variant="secondary" className="bg-blue-500 text-white">
-                    {bottles.filter(b => b.status === 'with_customer').length} out
-                  </Badge>
+                <div className="flex gap-2 text-[10px] sm:text-xs">
+                  {bottles.filter(b => b.status === 'filled').length > 0 && (
+                    <Badge variant="default" className="bg-green-500 font-bold">
+                      {bottles.filter(b => b.status === 'filled').length} FILLED
+                    </Badge>
+                  )}
+                  {bottles.filter(b => b.status === 'empty').length > 0 && (
+                    <Badge variant="outline" className="font-bold border-2">
+                      {bottles.filter(b => b.status === 'empty').length} EMPTY
+                    </Badge>
+                  )}
+                  {bottles.filter(b => b.status === 'with_customer').length > 0 && (
+                    <Badge variant="secondary" className="bg-blue-500 text-white font-bold">
+                      {bottles.filter(b => b.status === 'with_customer').length} OUT
+                    </Badge>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -77,13 +83,12 @@ export function BottleGrid({ bottles, onBottleClick, filter = 'all' }: BottleGri
                   <div
                     key={bottle.id}
                     onClick={() => onBottleClick?.(bottle)}
-                    className={`relative group cursor-pointer p-2 rounded-xl border-2 transition-all hover:shadow-lg hover:scale-105 ${
-                      bottle.status === 'filled'
+                    className={`relative group cursor-pointer p-2 rounded-xl border-2 transition-all hover:shadow-lg hover:scale-105 ${bottle.status === 'filled'
                         ? 'border-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-950/30 dark:hover:bg-green-950/50'
                         : bottle.status === 'with_customer'
-                        ? 'border-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-950/50'
-                        : 'border-border bg-muted/50 hover:bg-muted'
-                    }`}
+                          ? 'border-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-950/50'
+                          : 'border-border bg-muted/50 hover:bg-muted'
+                      }`}
                   >
                     {/* Mini bottle visual */}
                     <div className="flex flex-col items-center">
