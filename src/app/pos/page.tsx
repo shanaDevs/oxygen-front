@@ -34,7 +34,7 @@ import {
 } from '@/components/ui';
 import { customerService, bottleService, bottleTypeService, salesService, pdfService } from '@/services';
 import { Customer, OxygenBottle, BottleType, SaleItem } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, isValidSriLankanPhone } from '@/lib/utils';
 import {
   ShoppingCart,
   User,
@@ -54,6 +54,7 @@ import {
   Printer,
   RefreshCw,
   UserPlus,
+  Search,
 } from 'lucide-react';
 
 interface CartItem {
@@ -84,6 +85,9 @@ export default function POSPage() {
 
   // Quick add count state
   const [quickAddCount, setQuickAddCount] = useState<Record<string, number>>({});
+
+  // Bottle search state
+  const [bottleSearch, setBottleSearch] = useState('');
 
   // Return flow state
   const [returnedBottles, setReturnedBottles] = useState<Array<{ serialNumber: string; bottleTypeId: string; bottleTypeName: string }>>([]);
@@ -142,12 +146,29 @@ export default function POSPage() {
     [customers, selectedCustomer]
   );
 
-  const filteredBottles = useMemo(() =>
-    selectedType === 'all'
+  const filteredBottles = useMemo(() => {
+    let filtered = selectedType === 'all'
       ? filledBottles
-      : filledBottles.filter(b => b.capacityLiters?.toString() === selectedType),
-    [filledBottles, selectedType]
-  );
+      : filledBottles.filter(b => b.capacityLiters?.toString() === selectedType);
+    
+    if (bottleSearch.trim()) {
+      const searchLower = bottleSearch.toLowerCase().trim();
+      filtered = filtered.filter(b => 
+        b.serialNumber?.toLowerCase().includes(searchLower) ||
+        b.id.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return filtered;
+  }, [filledBottles, selectedType, bottleSearch]);
+
+  // Auto-sync return bottle type based on cart items
+  useEffect(() => {
+    if (cart.length > 0 && !returnTypeId) {
+      // Set return type to the first item's bottle type
+      setReturnTypeId(cart[0].bottleTypeId);
+    }
+  }, [cart, returnTypeId]);
 
   // Get bottle type for a bottle
   const getBottleType = (bottle: OxygenBottle): BottleType | undefined => {
@@ -180,10 +201,22 @@ export default function POSPage() {
         price: type.pricePerFill,
       },
     ]);
+
+    // Auto-add return entry for the same bottle type (without serial)
+    setReturnedBottles(prev => [
+      ...prev,
+      {
+        serialNumber: `RET-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        bottleTypeId: type.id,
+        bottleTypeName: type.name
+      }
+    ]);
   };
 
   const addByType = (type: BottleType, count: number) => {
     const newItems: CartItem[] = [];
+    const newReturns: Array<{ serialNumber: string; bottleTypeId: string; bottleTypeName: string }> = [];
+    
     for (let i = 0; i < count; i++) {
       newItems.push({
         uid: `cart-${Date.now()}-${Math.random()}-${i}`,
@@ -194,8 +227,16 @@ export default function POSPage() {
         refillKg: type.refillKg || 0,
         price: type.pricePerFill,
       });
+      
+      // Auto-add return entry for each bottle
+      newReturns.push({
+        serialNumber: `RET-${Date.now()}-${Math.random().toString(36).substr(2, 5)}-${i}`,
+        bottleTypeId: type.id,
+        bottleTypeName: type.name
+      });
     }
     setCart((prev) => [...prev, ...newItems]);
+    setReturnedBottles((prev) => [...prev, ...newReturns]);
   };
 
   const updateCartItemSerial = (uid: string, serial: string) => {
@@ -222,6 +263,8 @@ export default function POSPage() {
     setReturnedBottles([]);
     setPaymentMethod('cash');
     setAmountPaid(0);
+    setReturnTypeId('');
+    setBottleSearch('');
   };
 
   const addReturn = () => {
@@ -339,6 +382,11 @@ export default function POSPage() {
   const handleRegisterCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustomer.name || !newCustomer.phone) return;
+
+    if (!isValidSriLankanPhone(newCustomer.phone)) {
+      toast.error('Please enter a valid Sri Lankan phone number');
+      return;
+    }
 
     try {
       setIsRegistering(true);
@@ -462,6 +510,34 @@ export default function POSPage() {
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Select Individual Bottles</h2>
           <Separator className="flex-1" />
+        </div>
+
+        {/* Search Input */}
+        <div className="mb-4">
+          <div className="relative">
+            <Input
+              placeholder="Search by serial number..."
+              value={bottleSearch}
+              onChange={(e) => setBottleSearch(e.target.value)}
+              className="pl-10 h-10"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {bottleSearch && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                onClick={() => setBottleSearch('')}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          {bottleSearch && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Found {filteredBottles.filter((b) => !cart.find((item) => item.bottleId === b.id)).length} bottles matching "{bottleSearch}"
+            </p>
+          )}
         </div>
 
         <Card className="flex-1 overflow-hidden flex flex-col min-h-[300px] lg:min-h-0 bg-transparent border-0 shadow-none">

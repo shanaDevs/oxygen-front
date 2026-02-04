@@ -215,12 +215,7 @@ export function SupplierTransactionsTable({
                     {visibleColumns.liters && (
                       <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
                         <span className="font-medium text-emerald-600">
-                          {(tx.kgSupplied || 0) >= 1000
-                            ? `${((tx.kgSupplied || 0) / 1000).toFixed(2)}`
-                            : (tx.kgSupplied || 0).toLocaleString()}
-                        </span>
-                        <span className="text-[10px] ml-1 text-muted-foreground">
-                          {(tx.kgSupplied || 0) >= 1000 ? 'Tons' : 'Kg'}
+                          {(tx.kgSupplied || 0).toLocaleString()}
                         </span>
                       </td>
                     )}

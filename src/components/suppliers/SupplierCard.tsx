@@ -39,52 +39,38 @@ export function SupplierCard({ supplier, onClick, onPay, onPreview }: SupplierCa
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            {supplier.totalOutstanding > 0 && (
-              <Badge variant="destructive" className="gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                Outstanding
-              </Badge>
-            )}
             <div className="flex gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-primary"
+                className="h-7 w-7 p-0 text-primary"
                 title="Preview Statement"
                 onClick={(e) => {
                   e.stopPropagation();
                   onPreview?.(pdfService.getSupplierStatementUrl(supplier.id), `${supplier.name} - Statement`);
                 }}
               >
-                <Eye className="h-4 w-4" />
+                <Eye className="h-3.5 w-3.5" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-slate-500"
+                className="h-7 w-7 p-0 text-slate-500"
                 title="Download Statement"
                 onClick={(e) => {
                   e.stopPropagation();
                   pdfService.downloadSupplierStatement(supplier.id, supplier.name);
                 }}
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-3.5 w-3.5" />
               </Button>
-              {supplier.totalOutstanding > 0 && onPay && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 hover:border-red-300 gap-1 shadow-sm active:scale-95 transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPay(supplier);
-                  }}
-                >
-                  <Banknote className="h-3 w-3" />
-                  Settle
-                </Button>
-              )}
             </div>
+            {supplier.totalOutstanding > 0 && (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Outstanding
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -92,23 +78,37 @@ export function SupplierCard({ supplier, onClick, onPay, onPreview }: SupplierCa
           <div className="text-center p-3 bg-muted/50 rounded-xl">
             <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
               <Droplets className="h-3 w-3" />
-              Supplied
+              Supplied (Kg)
             </div>
-            <p className="text-sm font-bold">{supplier.totalSupplied.toLocaleString()} Kg</p>
+            <p className="text-sm font-bold">{supplier.totalSupplied.toLocaleString()}</p>
           </div>
           <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-xl">
             <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
               <Banknote className="h-3 w-3" />
-              Paid
+              Paid (Rs.)
             </div>
-            <p className="text-sm font-bold text-green-600 dark:text-green-400">Rs. {supplier.totalPaid.toLocaleString()}</p>
+            <p className="text-sm font-bold text-green-600 dark:text-green-400">{supplier.totalPaid.toLocaleString()}</p>
+            {supplier.totalOutstanding > 0 && onPay && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 hover:border-red-300 gap-1 shadow-sm active:scale-95 transition-all mt-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPay(supplier);
+                }}
+              >
+                <Banknote className="h-3 w-3" />
+                Settle
+              </Button>
+            )}
           </div>
           <div className="text-center p-3 bg-red-50 dark:bg-red-950/30 rounded-xl">
             <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
               <AlertTriangle className="h-3 w-3" />
-              Owed
+              Owed (Rs.)
             </div>
-            <p className="text-sm font-bold text-red-600 dark:text-red-400">Rs. {supplier.totalOutstanding.toLocaleString()}</p>
+            <p className="text-sm font-bold text-red-600 dark:text-red-400">{supplier.totalOutstanding.toLocaleString()}</p>
           </div>
         </div>
       </CardContent>

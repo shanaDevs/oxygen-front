@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.variable} antialiased bg-background text-foreground`}>
+      <body className={`${geist.variable} antialiased bg-background text-foreground`} suppressHydrationWarning>
         <ThemeProvider defaultTheme="system" storageKey="oxygen-ui-theme">
           <Sidebar />
           <div className="lg:ml-64 min-h-screen flex flex-col">

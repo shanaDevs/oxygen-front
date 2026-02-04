@@ -11,6 +11,8 @@ import { Supplier, SupplierTransaction, SupplierPayment } from '@/types';
 import { Factory, Droplets, Banknote, AlertTriangle, UserPlus, Phone, MapPin, CheckCircle2, FileText, Download, Receipt, ExternalLink, History, Calendar, Search, Filter, CreditCard, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PDFPreviewModal } from '@/components/shared/PDFPreviewModal';
+import { toast } from 'sonner';
+import { isValidSriLankanPhone } from '@/lib/utils';
 
 export default function SuppliersPage() {
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,9 @@ export default function SuppliersPage() {
     remaining: number;
     id?: string;
   } | null>(null);
+
+  // Payment confirmation state
+  const [pendingPayment, setPendingPayment] = useState(false);
 
   // PDF Preview State
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -175,6 +180,34 @@ export default function SuppliersPage() {
     e.preventDefault();
     if (!supplierForPay || !payAmount) return;
 
+    // First click - ask for confirmation
+    if (!pendingPayment) {
+      setPendingPayment(true);
+      toast.warning(
+        `Confirm payment of Rs. ${parseFloat(payAmount).toLocaleString()} to ${supplierForPay.name}?`,
+        {
+          duration: 5000,
+          action: {
+            label: 'Yes, Proceed',
+            onClick: () => {
+              processPayment();
+            },
+          },
+          onDismiss: () => {
+            setPendingPayment(false);
+          },
+          onAutoClose: () => {
+            setPendingPayment(false);
+          },
+        }
+      );
+      return;
+    }
+  };
+
+  const processPayment = async () => {
+    if (!supplierForPay || !payAmount) return;
+
     try {
       setProcessing(true);
       const amount = parseFloat(payAmount);
@@ -200,11 +233,15 @@ export default function SuppliersPage() {
       setPayNotes('');
       setSupplierForPay(null);
       setSelectedTxId(null);
+      setPendingPayment(false);
       fetchData();
+      toast.success('Payment recorded successfully!');
     } catch (err) {
       console.error('Payment failed:', err);
+      toast.error('Payment failed. Please try again.');
     } finally {
       setProcessing(false);
+      setPendingPayment(false);
     }
   };
 
@@ -718,6 +755,17 @@ export default function SuppliersPage() {
                   email: formData.get('email') as string,
                   address: formData.get('address') as string,
                 };
+
+                if (!isValidSriLankanPhone(supplierData.phone)) {
+                  toast.error('Please enter a valid primary Sri Lankan phone number');
+                  return;
+                }
+
+                if (supplierData.phone2 && !isValidSriLankanPhone(supplierData.phone2)) {
+                  toast.error('Please enter a valid secondary Sri Lankan phone number');
+                  return;
+                }
+
                 const newSupplier = await supplierService.create(supplierData);
                 setSuppliers((prev) => [...prev, newSupplier]);
                 setShowAddModal(false);
@@ -818,9 +866,9 @@ export default function SuppliersPage() {
             </div>
 
             <div className="flex gap-3 pt-6">
-              <Button type="button" variant="ghost" onClick={() => setShowPayModal(false)} className="flex-1 h-12" disabled={processing}>Cancel</Button>
-              <Button type="submit" className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-500/20 font-black" disabled={processing || !payAmount || parseFloat(payAmount) <= 0}>
-                {processing ? <LoadingSpinner size="sm" /> : 'Confirm Payment'}
+              <Button type="button" variant="ghost" onClick={() => { setShowPayModal(false); setPendingPayment(false); }} className="flex-1 h-12" disabled={processing}>Cancel</Button>
+              <Button type="submit" className={cn("flex-[2] h-12 shadow-xl font-black", pendingPayment ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20")} disabled={processing || !payAmount || parseFloat(payAmount) <= 0}>
+                {processing ? <LoadingSpinner size="sm" /> : pendingPayment ? 'Click Toast to Confirm' : 'Confirm Payment'}
               </Button>
             </div>
           </form>
