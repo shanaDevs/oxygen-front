@@ -9,6 +9,8 @@ import { ReturnBottleModal } from '@/components/customers/ReturnBottleModal';
 import { CollectPaymentModal } from '@/components/customers/CollectPaymentModal';
 import { TransactionBottleLedgerModal } from '@/components/customers/TransactionBottleLedgerModal';
 import { CustomerDetailModal } from '@/components/customers/CustomerDetailModal';
+import { toast } from 'sonner';
+import { isValidSriLankanPhone } from '@/lib/utils';
 import {
   Button,
   LoadingSpinner,
@@ -77,6 +79,7 @@ export default function CustomersPage() {
   const [ledgerData, setLedgerData] = useState<{ ledger: any[], currentBottles: any[] } | null>(null);
   const [ledgerLoading, setLedgerLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Payment success state
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
@@ -936,22 +939,40 @@ export default function CustomersPage() {
             </DialogDescription>
           </DialogHeader>
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
+              if (isSubmitting) return;
+
               const formData = new FormData(e.currentTarget);
-              const newCustomer: Customer = {
-                id: `cust-${Date.now()}`,
-                name: formData.get('name') as string,
-                phone: formData.get('phone') as string,
-                email: formData.get('email') as string,
-                address: formData.get('address') as string,
-                loyaltyPoints: 0,
-                totalCredit: 0,
-                bottlesInHand: 0,
-                createdAt: new Date().toISOString(),
-              };
-              setCustomers((prev) => [...prev, newCustomer]);
-              setShowAddModal(false);
+              const name = formData.get('name') as string;
+              const phone = formData.get('phone') as string;
+              const email = formData.get('email') as string;
+              const address = formData.get('address') as string;
+
+              if (!isValidSriLankanPhone(phone)) {
+                toast.error('Please enter a valid Sri Lankan phone number (e.g., 077XXXXXXX)');
+                return;
+              }
+
+              try {
+                setIsSubmitting(true);
+                const result = await customerService.create({
+                  name,
+                  phone,
+                  email: email || undefined,
+                  address: address || undefined,
+                });
+
+                setCustomers((prev) => [...prev, result]);
+                setShowAddModal(false);
+                // Reset form
+                (e.target as HTMLFormElement).reset();
+              } catch (err) {
+                console.error('Failed to create customer:', err);
+                // Error is handled by apiFetch toast
+              } finally {
+                setIsSubmitting(false);
+              }
             }}
             className="space-y-4"
           >
@@ -1009,9 +1030,13 @@ export default function CustomersPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1 gap-2">
-                <UserPlus className="h-4 w-4" />
-                Add Customer
+              <Button type="submit" className="flex-1 gap-2" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <UserPlus className="h-4 w-4" />
+                )}
+                {isSubmitting ? 'Adding...' : 'Add Customer'}
               </Button>
             </div>
           </form>

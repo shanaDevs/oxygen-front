@@ -300,7 +300,7 @@ export default function TankPage() {
                     </td>
                     <td className="px-4 py-3 text-sm font-medium">{tx.supplierName}</td>
                     <td className="px-4 py-3 text-sm text-right text-green-600 dark:text-green-400">
-                      +{(tx.kgSupplied || tx.litersSupplied || 0).toLocaleString()} kg
+                      +{(tx.kgSupplied || tx.litersSupplied || 0).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Badge
