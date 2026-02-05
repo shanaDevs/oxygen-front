@@ -66,6 +66,14 @@ interface CartItem {
   capacityLiters: number;
   refillKg: number;
   price: number;
+  returnLinkId?: string; // Link to corresponding return bottle
+}
+
+interface ReturnBottle {
+  serialNumber: string;
+  bottleTypeId: string;
+  bottleTypeName: string;
+  cartLinkUid?: string; // Link to corresponding cart item
 }
 
 export default function POSPage() {
@@ -90,7 +98,7 @@ export default function POSPage() {
   const [bottleSearch, setBottleSearch] = useState('');
 
   // Return flow state
-  const [returnedBottles, setReturnedBottles] = useState<Array<{ serialNumber: string; bottleTypeId: string; bottleTypeName: string }>>([]);
+  const [returnedBottles, setReturnedBottles] = useState<ReturnBottle[]>([]);
   const [returnSerial, setReturnSerial] = useState('');
   const [returnTypeId, setReturnTypeId] = useState('');
 
@@ -188,10 +196,13 @@ export default function POSPage() {
       return;
     }
 
+    const cartUid = `cart-${Date.now()}-${Math.random()}`;
+    const returnId = `RET-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
     setCart((prev) => [
       ...prev,
       {
-        uid: `cart-${Date.now()}-${Math.random()}`,
+        uid: cartUid,
         bottleId: bottle.id,
         serialNumber: bottle.serialNumber || '',
         bottleTypeId: type.id,
@@ -199,6 +210,7 @@ export default function POSPage() {
         capacityLiters: bottle.capacityLiters,
         refillKg: type.refillKg || 0,
         price: type.pricePerFill,
+        returnLinkId: returnId,
       },
     ]);
 
@@ -206,33 +218,39 @@ export default function POSPage() {
     setReturnedBottles(prev => [
       ...prev,
       {
-        serialNumber: `RET-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        serialNumber: returnId,
         bottleTypeId: type.id,
-        bottleTypeName: type.name
+        bottleTypeName: type.name,
+        cartLinkUid: cartUid,
       }
     ]);
   };
 
   const addByType = (type: BottleType, count: number) => {
     const newItems: CartItem[] = [];
-    const newReturns: Array<{ serialNumber: string; bottleTypeId: string; bottleTypeName: string }> = [];
+    const newReturns: ReturnBottle[] = [];
     
     for (let i = 0; i < count; i++) {
+      const cartUid = `cart-${Date.now()}-${Math.random()}-${i}`;
+      const returnId = `RET-${Date.now()}-${Math.random().toString(36).substr(2, 5)}-${i}`;
+      
       newItems.push({
-        uid: `cart-${Date.now()}-${Math.random()}-${i}`,
+        uid: cartUid,
         serialNumber: '',
         bottleTypeId: type.id,
         bottleTypeName: type.name,
         capacityLiters: type.capacityLiters,
         refillKg: type.refillKg || 0,
         price: type.pricePerFill,
+        returnLinkId: returnId,
       });
       
       // Auto-add return entry for each bottle
       newReturns.push({
-        serialNumber: `RET-${Date.now()}-${Math.random().toString(36).substr(2, 5)}-${i}`,
+        serialNumber: returnId,
         bottleTypeId: type.id,
-        bottleTypeName: type.name
+        bottleTypeName: type.name,
+        cartLinkUid: cartUid,
       });
     }
     setCart((prev) => [...prev, ...newItems]);
@@ -255,7 +273,15 @@ export default function POSPage() {
   };
 
   const removeFromCart = (uid: string) => {
+    // Find the cart item to get its linked return ID
+    const cartItem = cart.find(item => item.uid === uid);
+    
     setCart((prev) => prev.filter((item) => item.uid !== uid));
+    
+    // Also remove the linked return bottle if exists
+    if (cartItem?.returnLinkId) {
+      setReturnedBottles(prev => prev.filter(r => r.serialNumber !== cartItem.returnLinkId));
+    }
   };
 
   const clearCart = () => {
@@ -290,7 +316,23 @@ export default function POSPage() {
   };
 
   const removeReturn = (serial: string) => {
+    // Find the return bottle to get its linked cart UID
+    const returnBottle = returnedBottles.find(r => r.serialNumber === serial);
+    
     setReturnedBottles(prev => prev.filter(r => r.serialNumber !== serial));
+    
+    // Also remove the linked cart item if exists
+    if (returnBottle?.cartLinkUid) {
+      setCart(prev => prev.filter(item => item.uid !== returnBottle.cartLinkUid));
+    }
+  };
+
+  const updateReturnSerial = (oldSerial: string, newSerial: string) => {
+    setReturnedBottles(prev => prev.map(r => 
+      r.serialNumber === oldSerial 
+        ? { ...r, serialNumber: newSerial }
+        : r
+    ));
   };
 
   // Calculate totals
@@ -781,23 +823,33 @@ export default function POSPage() {
                     returnedBottles.map((ret) => (
                       <div
                         key={ret.serialNumber}
-                        className="flex items-center justify-between p-2 bg-card border border-amber-200 bg-amber-50/30 rounded-lg group"
+                        className="p-2 bg-card border border-amber-200 bg-amber-50/30 rounded-lg group space-y-2"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-1.5 h-8 bg-amber-400 rounded-full" />
-                          <div>
-                            <p className="text-sm font-semibold leading-none">{ret.serialNumber}</p>
-                            <p className="text-[10px] text-muted-foreground mt-1">{ret.bottleTypeName}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-1.5 h-8 bg-amber-400 rounded-full" />
+                            <div className="flex-1">
+                              <p className="text-[10px] text-muted-foreground">{ret.bottleTypeName}</p>
+                            </div>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                            onClick={() => removeReturn(ret.serialNumber)}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-destructive hover:bg-destructive/10"
-                          onClick={() => removeReturn(ret.serialNumber)}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="relative">
+                          <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Serial Number</Label>
+                          <Input
+                            placeholder="Enter return serial..."
+                            className="h-8 text-xs bg-amber-50/50"
+                            value={ret.serialNumber}
+                            onChange={(e) => updateReturnSerial(ret.serialNumber, e.target.value)}
+                          />
+                        </div>
                       </div>
                     ))
                   )}
