@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { SupplierCard } from '@/components/suppliers/SupplierCard';
 import { SupplierTransactionsTable } from '@/components/suppliers/SupplierTransactionsTable';
 import { SupplierPaymentsTable } from '@/components/suppliers/SupplierPaymentsTable';
-import { Button, LoadingSpinner, Card, CardContent, CardHeader, CardTitle, Badge, Input, Label, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Separator, Alert, AlertDescription, AlertTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger } from '@/components/ui';
+import { Button, LoadingSpinner, Card, CardContent, CardHeader, CardTitle, Badge, Input, Label, Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, Separator, Alert, AlertDescription, AlertTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import { StatCard } from '@/components/dashboard';
 import { supplierService, pdfService } from '@/services';
 import { Supplier, SupplierTransaction, SupplierPayment } from '@/types';
@@ -51,7 +51,7 @@ export default function SuppliersPage() {
   } | null>(null);
 
   // Payment confirmation state
-  const [pendingPayment, setPendingPayment] = useState(false);
+  const [showConfirmPay, setShowConfirmPay] = useState(false);
 
   // PDF Preview State
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -176,33 +176,10 @@ export default function SuppliersPage() {
     return filterPayments(filtered);
   }, [payments, selectedSupplier, timeRange, startDate, endDate]);
 
-  const handlePayOutstanding = async (e: React.FormEvent) => {
+  const handlePayOutstanding = (e: React.FormEvent) => {
     e.preventDefault();
     if (!supplierForPay || !payAmount) return;
-
-    // First click - ask for confirmation
-    if (!pendingPayment) {
-      setPendingPayment(true);
-      toast.warning(
-        `Confirm payment of Rs. ${parseFloat(payAmount).toLocaleString()} to ${supplierForPay.name}?`,
-        {
-          duration: 5000,
-          action: {
-            label: 'Yes, Proceed',
-            onClick: () => {
-              processPayment();
-            },
-          },
-          onDismiss: () => {
-            setPendingPayment(false);
-          },
-          onAutoClose: () => {
-            setPendingPayment(false);
-          },
-        }
-      );
-      return;
-    }
+    setShowConfirmPay(true);
   };
 
   const processPayment = async () => {
@@ -233,7 +210,6 @@ export default function SuppliersPage() {
       setPayNotes('');
       setSupplierForPay(null);
       setSelectedTxId(null);
-      setPendingPayment(false);
       fetchData();
       toast.success('Payment recorded successfully!');
     } catch (err) {
@@ -241,7 +217,6 @@ export default function SuppliersPage() {
       toast.error('Payment failed. Please try again.');
     } finally {
       setProcessing(false);
-      setPendingPayment(false);
     }
   };
 
@@ -866,9 +841,9 @@ export default function SuppliersPage() {
             </div>
 
             <div className="flex gap-3 pt-6">
-              <Button type="button" variant="ghost" onClick={() => { setShowPayModal(false); setPendingPayment(false); }} className="flex-1 h-12" disabled={processing}>Cancel</Button>
-              <Button type="submit" className={cn("flex-[2] h-12 shadow-xl font-black", pendingPayment ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20")} disabled={processing || !payAmount || parseFloat(payAmount) <= 0}>
-                {processing ? <LoadingSpinner size="sm" /> : pendingPayment ? 'Click Toast to Confirm' : 'Confirm Payment'}
+              <Button type="button" variant="ghost" onClick={() => setShowPayModal(false)} className="flex-1 h-12" disabled={processing}>Cancel</Button>
+              <Button type="submit" className="flex-[2] h-12 shadow-xl font-black bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20" disabled={processing || !payAmount || parseFloat(payAmount) <= 0}>
+                {processing ? <LoadingSpinner size="sm" /> : 'Record Payment'}
               </Button>
             </div>
           </form>
@@ -929,6 +904,41 @@ export default function SuppliersPage() {
         url={previewUrl}
         title={previewTitle}
       />
+
+      {/* Payment Confirmation Modal */}
+      <Dialog open={showConfirmPay} onOpenChange={setShowConfirmPay}>
+        <DialogContent className="sm:max-w-[400px] p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <Banknote className="h-6 w-6 text-emerald-600" />
+              Confirm Payment
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Are you sure you want to record a payment of <span className="font-bold text-slate-900">Rs. {parseFloat(payAmount || '0').toLocaleString()}</span> to <span className="font-bold text-slate-900">{supplierForPay?.name}</span>?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 pt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmPay(false)}
+              className="flex-1 h-11"
+              disabled={processing}
+            >
+              No, Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowConfirmPay(false);
+                processPayment();
+              }}
+              className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20"
+              disabled={processing}
+            >
+              {processing ? <LoadingSpinner size="sm" /> : 'Yes, Confirm'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
