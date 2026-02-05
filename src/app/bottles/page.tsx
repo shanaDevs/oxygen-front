@@ -814,7 +814,7 @@ export default function BottlesPage() {
           isOpen={showFillModal}
           onClose={() => setShowFillModal(false)}
           onFill={handleFillBottles}
-          emptyBottles={emptyBottles.filter(b => b.location === 'center')}
+          emptyBottles={emptyBottles}
           bottleTypes={bottleTypes}
           tankLevel={tank.currentLevelKg}
         />
